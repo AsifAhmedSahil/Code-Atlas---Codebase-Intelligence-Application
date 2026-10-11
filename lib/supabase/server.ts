@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import { supabasePublicEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 /*
  * The database client carries the signed-in token. Clerk is the only session
@@ -12,10 +13,10 @@ import { supabasePublicEnv } from "@/lib/env";
  * Nothing queries anything yet. A client wired up anonymously would look
  * completely fine until the first policy exists, and then return nothing.
  */
-export function createServerSupabaseClient(): SupabaseClient {
+export function createServerSupabaseClient(): SupabaseClient<Database> {
   const { url, publishableKey } = supabasePublicEnv();
 
-  return createClient(url, publishableKey, {
+  return createClient<Database>(url, publishableKey, {
     async accessToken() {
       return (await auth()).getToken();
     },
