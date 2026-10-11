@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
+/*
+ * The palette starts at four decisions: one blue accent, green for incoming,
+ * amber for outgoing, and surfaces that are near-white or near-black. Every
+ * other value derives from those. Colour means something or it isn't here.
+ *
+ * Each token is a single light-dark() value, so there is one definition per
+ * token and the effective colour is chosen by `color-scheme` on the root
+ * element. That is what lets forcing light win over a dark system: the toggle
+ * writes `color-scheme`, not the individual tokens.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface: light-dark(#ffffff, #0a0a0a);
+  --raised: light-dark(#f5f6f7, #141517);
+  --border: light-dark(#e3e5e8, #27292c);
+  --text: light-dark(#17181a, #ededed);
+  --muted: light-dark(#6a6f75, #8a9096);
+  --accent: light-dark(#2563eb, #3b82f6);
+  --incoming: light-dark(#15803d, #22c55e);
+  --outgoing: light-dark(#b45309, #f59e0b);
+}
+
+/* Follow the system, force light, force dark — written to the root element. */
+:root[data-theme="system"] {
+  color-scheme: light dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-incoming: var(--incoming);
+  --color-outgoing: var(--outgoing);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
 }
