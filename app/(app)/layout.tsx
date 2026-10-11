@@ -28,7 +28,7 @@ export default async function AppLayout({
       <header className="flex h-11 items-center justify-between border-b border-border bg-raised px-4">
         <Link
           href="/"
-          className="font-mono text-[12px] font-medium tracking-tight text-text"
+          className="font-display text-[13px] font-medium tracking-[-0.01em] text-text"
         >
           Cartograph
         </Link>
