@@ -32,6 +32,10 @@ export interface FileLike {
   extension: string;
 }
 
+export function kindLabel(kind: FileKind): string {
+  return SPEC[kind].name;
+}
+
 export function fileKind(file: FileLike): FileKind {
   const { path, extension } = file;
   if (extension === ".ts" && path.endsWith(".d.ts")) return "dts";

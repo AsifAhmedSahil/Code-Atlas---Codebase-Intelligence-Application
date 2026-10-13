@@ -20,6 +20,7 @@ import type { MapEdge, MapNode } from "@/lib/map/fold";
 import { basename } from "@/lib/map/labels";
 
 import { layoutNodes } from "./map-layout";
+import { useWorkspace } from "./workspace-context";
 
 import "@xyflow/react/dist/style.css";
 
@@ -28,11 +29,6 @@ export interface GraphDatum {
   edges: MapEdge[];
   labels: Record<string, string>;
 }
-
-type Selection =
-  | { kind: "node"; id: string }
-  | { kind: "file"; path: string }
-  | null;
 
 interface FolderNodeData {
   [key: string]: unknown;
@@ -172,6 +168,17 @@ function dot(kind: "target" | "source", id: string) {
 // The header closes it again.
 function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
   const { label, fileCount, files, fanIn, fanOut, expanded, size, selected, dimmed } = data;
+  const { hover, setHover } = useWorkspace();
+
+  // The map answers the pane's hover as well as its own: a file highlighted over
+  // in the pane lights its row here, and hovering a file in a pane lights the
+  // node when that node is folded.
+  const nodeHovered =
+    hover?.kind === "node"
+      ? hover.id === id
+      : hover?.kind === "file"
+        ? files.includes(hover.path)
+        : false;
 
   const nodeStyle: CSSProperties = {
     width: size.width,
@@ -180,14 +187,17 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
     transition: "opacity 160ms ease",
   };
   const selectedClass = selected ? "border-accent/70 ring-1 ring-accent/40" : "";
+  const hoverClass = nodeHovered && !selected ? "border-accent/60 ring-1 ring-accent/30" : "";
 
   if (!expanded) {
     return (
       <button
         type="button"
         onClick={() => data.onOpen(id)}
+        onMouseEnter={() => setHover({ kind: "node", id })}
+        onMouseLeave={() => setHover(null)}
         style={nodeStyle}
-        className={`pointer-events-auto relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[6px] border border-border bg-raised font-mono text-text shadow-sm transition hover:border-accent/60 ${selectedClass}`}
+        className={`pointer-events-auto relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[6px] border border-border bg-raised font-mono text-text shadow-sm transition hover:border-accent/60 ${selectedClass} ${hoverClass}`}
       >
         <span className="w-full truncate px-3 text-center text-[12px]">{label}</span>
         <span className="w-full truncate px-3 text-center text-[10.5px] tabular-nums text-muted">
@@ -203,7 +213,7 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
     <div
       style={nodeStyle}
       onClick={() => data.onSelectNode(id)}
-      className={`pointer-events-auto relative flex flex-col overflow-hidden rounded-[6px] border border-border bg-raised font-mono shadow-sm transition ${selectedClass}`}
+      className={`pointer-events-auto relative flex flex-col overflow-hidden rounded-[6px] border border-border bg-raised font-mono shadow-sm transition ${selectedClass} ${hoverClass}`}
     >
       <button
         type="button"
@@ -211,6 +221,8 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
           event.stopPropagation();
           data.onClose(id);
         }}
+        onMouseEnter={() => setHover({ kind: "node", id })}
+        onMouseLeave={() => setHover(null)}
         className="flex h-[44px] w-full shrink-0 cursor-pointer items-baseline gap-2 rounded-t-[6px] border-b border-border bg-raised px-2.5 text-left transition hover:border-accent/60"
       >
         <span className="min-w-0 truncate text-[12px] font-medium text-text">{label}</span>
@@ -225,6 +237,7 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
         {files.map((file) => {
           const dimRow = data.rowDim !== null && !data.rowDim.has(file);
           const isSelectedFile = data.selectedFile === file;
+          const isHoveredFile = hover?.kind === "file" && hover.path === file;
           return (
             <div
               key={file}
@@ -232,8 +245,12 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
                 event.stopPropagation();
                 data.onSelectFile(file);
               }}
+              onMouseEnter={() => setHover({ kind: "file", path: file })}
+              onMouseLeave={() => setHover(null)}
               style={{ opacity: dimRow ? 0.25 : 1, transition: "opacity 160ms ease" }}
-              className={`relative flex h-6 shrink-0 cursor-pointer items-center border-b border-border/60 px-2.5 text-[11px] text-text/90 hover:bg-accent/5 ${isSelectedFile ? "bg-accent/10" : ""}`}
+              className={`relative flex h-6 shrink-0 cursor-pointer items-center border-b border-border/60 px-2.5 text-[11px] text-text/90 hover:bg-accent/5 ${
+                isSelectedFile || isHoveredFile ? "bg-accent/10" : ""
+              }`}
             >
               {dot("target", `in:${file}`)}
               <span className="w-full truncate pl-1.5">{basename(file)}</span>
@@ -278,7 +295,7 @@ function edgeFor(e: MapEdge, expanded: ReadonlySet<string>, bright: boolean): Ed
 
 function MapGraphInner({ datum }: { datum: GraphDatum }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  const [selection, setSelection] = useState<Selection>(null);
+  const { selection, setSelection } = useWorkspace();
   const rf = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const zoomBeforeToggle = useRef(1);
@@ -322,7 +339,7 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
       });
       setSelection({ kind: "node", id });
     },
-    [rf],
+    [rf, setSelection],
   );
 
   // Closing a panel clears the selection when it belonged to that panel.
@@ -341,20 +358,20 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
         return sel;
       });
     },
-    [fileOf, rf],
+    [fileOf, rf, setSelection],
   );
 
   const selectNode = useCallback((id: string) => {
     setSelection((sel) =>
       sel && sel.kind === "node" && sel.id === id ? null : { kind: "node", id },
     );
-  }, []);
+  }, [setSelection]);
 
   const selectFile = useCallback((file: string) => {
     setSelection((sel) =>
       sel && sel.kind === "file" && sel.path === file ? null : { kind: "file", path: file },
     );
-  }, []);
+  }, [setSelection]);
 
   const { positions, sizes } = useMemo(
     () => layoutNodes(datum.nodes, datum.edges, datum.labels, expanded),
