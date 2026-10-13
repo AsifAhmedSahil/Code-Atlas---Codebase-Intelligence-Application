@@ -19,6 +19,15 @@
   --accent: light-dark(#2563eb, #3b82f6);
   --incoming: light-dark(#15803d, #22c55e);
   --outgoing: light-dark(#b45309, #f59e0b);
+  /* File-kinds on the canvas. Teal, violet, rose, lime, slate: enough hues to
+     separate a handful of categories, none of which collide with the edge
+     direction colours (green/amber) or the interactive accent (blue). */
+  --file-ts: light-dark(#0f766e, #2dd4bf);
+  --file-tsx: light-dark(#7c3aed, #a78bfa);
+  --file-js: light-dark(#be123c, #fb7185);
+  --file-jsx: light-dark(#4d7c0f, #a3e635);
+  --file-dts: light-dark(#475569, #94a3b8);
+  --file-other: light-dark(#6a6f75, #8a9096);
 }
 
 /* Follow the system, force light, force dark — written to the root element. */
@@ -41,9 +50,34 @@
   --color-accent: var(--accent);
   --color-incoming: var(--incoming);
   --color-outgoing: var(--outgoing);
+  --color-file-ts: var(--file-ts);
+  --color-file-tsx: var(--file-tsx);
+  --color-file-js: var(--file-js);
+  --color-file-jsx: var(--file-jsx);
+  --color-file-dts: var(--file-dts);
+  --color-file-other: var(--file-other);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-space-grotesk);
+}
+
+/* Slim scrollbars for the scrollable row lists inside open folders. */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
 body {
