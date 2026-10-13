@@ -2,10 +2,7 @@ import Link from "next/link";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { countCategories } from "@/components/workspace/categories";
-import { DetailPane } from "@/components/workspace/detail-pane";
-import { FileRail } from "@/components/workspace/file-rail";
-import { MapCanvas } from "@/components/workspace/map-canvas";
-import { WorkspaceShell } from "@/components/workspace/workspace-shell";
+import { WorkspaceView } from "@/components/workspace/workspace-view";
 import { foldMap } from "@/lib/map/fold";
 import { resolveNodeLabels } from "@/lib/map/labels";
 import { getPreviewParse } from "@/lib/preview";
@@ -20,12 +17,7 @@ export default function PreviewPage() {
   const result = getPreviewParse();
   const categories = countCategories(result.files);
   const folded = foldMap(result);
-  const labels = resolveNodeLabels(folded.nodes, result.root);
-  const datum = {
-    nodes: folded.nodes,
-    edges: folded.edges,
-    labels: Object.fromEntries(labels),
-  };
+  const labels = Object.fromEntries(resolveNodeLabels(folded.nodes, result.root));
 
   return (
     <div className="flex h-dvh flex-col">
@@ -50,12 +42,11 @@ export default function PreviewPage() {
         </div>
       </header>
 
-      <WorkspaceShell
-        rail={
-          <FileRail categories={categories} total={result.counts.parsed} />
-        }
-        canvas={<MapCanvas datum={datum} />}
-        detail={<DetailPane />}
+      <WorkspaceView
+        parse={result}
+        folded={folded}
+        labels={labels}
+        categories={categories}
       />
     </div>
   );
