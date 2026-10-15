@@ -21,6 +21,8 @@ import {
 import type { FoldedMap, MapNode } from "@/lib/map/fold";
 import type { ParsedFile, ParseResult } from "@/lib/parser/types";
 
+import type { FileKind } from "./categories";
+
 export type Selection =
   | { kind: "node"; id: string }
   | { kind: "file"; path: string }
@@ -41,6 +43,11 @@ export interface WorkspaceValue {
   setSelection: Dispatch<SetStateAction<Selection>>;
   hover: Hover;
   setHover: Dispatch<SetStateAction<Hover>>;
+  // The file kind the rail has focused. Nothing outside it disappears — it just
+  // dims — so the shape of the repository stays on screen while one kind stands
+  // out. Null means no category, dim nothing.
+  category: FileKind | null;
+  setCategory: Dispatch<SetStateAction<FileKind | null>>;
 }
 
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
@@ -66,6 +73,7 @@ export function WorkspaceProvider({
 }) {
   const [selection, setSelection] = useState<Selection>(null);
   const [hover, setHover] = useState<Hover>(null);
+  const [category, setCategory] = useState<FileKind | null>(null);
 
   const fileByPath = useMemo(
     () => new Map(parse.files.map((file) => [file.path, file])),
@@ -87,8 +95,10 @@ export function WorkspaceProvider({
       setSelection,
       hover,
       setHover,
+      category,
+      setCategory,
     }),
-    [parse, folded, labels, fileByPath, nodeById, selection, hover],
+    [parse, folded, labels, fileByPath, nodeById, selection, hover, category],
   );
 
   return (

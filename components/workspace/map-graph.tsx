@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import type { MapEdge, MapNode } from "@/lib/map/fold";
 import { basename } from "@/lib/map/labels";
 
+import { fileKind } from "./categories";
 import { layoutNodes } from "./map-layout";
 import { useWorkspace } from "./workspace-context";
 
@@ -48,6 +49,9 @@ interface FolderNodeData {
   selectedFile: string | null;
   dimmed: boolean;
   rowDim: ReadonlySet<string> | null;
+  // The files in this node that match the rail's chosen kind, or null when no
+  // kind is chosen. Rows outside it dim, and its size is the panel's match count.
+  matched: ReadonlySet<string> | null;
 }
 
 type FolderNode = Node<FolderNodeData, "folder">;
@@ -167,7 +171,18 @@ function dot(kind: "target" | "source", id: string) {
 // panel, a row selects that file, and the panel background selects the module.
 // The header closes it again.
 function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
-  const { label, fileCount, files, fanIn, fanOut, expanded, size, selected, dimmed } = data;
+  const {
+    label,
+    fileCount,
+    files,
+    fanIn,
+    fanOut,
+    expanded,
+    size,
+    selected,
+    dimmed,
+    matched,
+  } = data;
   const { hover, setHover } = useWorkspace();
 
   // The map answers the pane's hover as well as its own: a file highlighted over
@@ -227,7 +242,7 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
       >
         <span className="min-w-0 truncate text-[12px] font-medium text-text">{label}</span>
         <span className="ml-auto shrink-0 whitespace-nowrap text-[10.5px] tabular-nums text-muted">
-          {fileCount} · in {fanIn} · out {fanOut}
+          {matched ? `${matched.size} of ${fileCount} match` : `${fileCount} · in ${fanIn} · out ${fanOut}`}
         </span>
       </button>
       <div
@@ -235,7 +250,9 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
         className="scroll-thin nowheel min-h-0 flex-1 overflow-y-auto"
       >
         {files.map((file) => {
-          const dimRow = data.rowDim !== null && !data.rowDim.has(file);
+          const dimRow =
+            (data.rowDim !== null && !data.rowDim.has(file)) ||
+            (data.matched !== null && !data.matched.has(file));
           const isSelectedFile = data.selectedFile === file;
           const isHoveredFile = hover?.kind === "file" && hover.path === file;
           return (
@@ -295,7 +312,7 @@ function edgeFor(e: MapEdge, expanded: ReadonlySet<string>, bright: boolean): Ed
 
 function MapGraphInner({ datum }: { datum: GraphDatum }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  const { selection, setSelection } = useWorkspace();
+  const { selection, setSelection, category, fileByPath } = useWorkspace();
   const rf = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const zoomBeforeToggle = useRef(1);
@@ -397,7 +414,8 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
   }, [expanded, rf]);
 
   // What stays at full strength: the selection, its edges, and whatever those
-  // edges connect to. Everything else dims.
+  // edges connect to. Everything else dims. If a category is chosen, nodes that
+  // contain nothing of it also dim, and edges that would connect to them dim.
   const focus = useMemo(() => {
     if (!selection) {
       return {
@@ -437,13 +455,36 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
     return { keptNodes, keptFiles, brightEdges };
   }, [selection, datum, fileToNode]);
 
+  const categoryMatch = useMemo(() => {
+    if (category === null) return null;
+    const nodeHasMatch = new Map<string, boolean>();
+    const nodeMatched = new Map<string, ReadonlySet<string>>();
+    for (const node of datum.nodes) {
+      const matched = new Set<string>();
+      for (const file of node.files) {
+        const f = fileByPath.get(file);
+        if (f && fileKind(f) === category) matched.add(file);
+      }
+      nodeHasMatch.set(node.id, matched.size > 0);
+      nodeMatched.set(node.id, matched);
+    }
+    return { nodeHasMatch, nodeMatched };
+  }, [datum, category, fileByPath]);
+
   const rfNodes = useMemo<FolderNode[]>(
     () =>
       datum.nodes.map((node) => {
         const isOpen = expanded.has(node.id);
         const size = sizes.get(node.id)!;
         const position = positions.get(node.id)!;
-        const dimmed = focus.keptNodes !== null && !focus.keptNodes.has(node.id);
+        const focusDim = focus.keptNodes !== null && !focus.keptNodes.has(node.id);
+        const catDim =
+          categoryMatch !== null && !categoryMatch.nodeHasMatch.get(node.id);
+        const dimmed = focusDim || catDim;
+        const matchedSet =
+          categoryMatch !== null
+            ? categoryMatch.nodeMatched.get(node.id) ?? null
+            : null;
         return {
           id: node.id,
           type: "folder",
@@ -466,10 +507,24 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
             selectedFile: selection?.kind === "file" ? selection.path : null,
             dimmed,
             rowDim: focus.keptFiles,
+            matched: matchedSet,
           },
         };
       }),
-    [datum, expanded, positions, sizes, openNode, closeNode, selectNode, selectFile, syncNodeInternals, selection, focus],
+    [
+      datum,
+      expanded,
+      positions,
+      sizes,
+      openNode,
+      closeNode,
+      selectNode,
+      selectFile,
+      syncNodeInternals,
+      selection,
+      focus,
+      categoryMatch,
+    ],
   );
 
   const rfEdges = useMemo(() => {
@@ -482,11 +537,18 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
           : `${e.source}->${e.target}`;
       if (seen.has(dedupe)) continue;
       seen.add(dedupe);
-      const bright = focus.brightEdges === null || focus.brightEdges.has(edgeKey(e));
-      edges.push(edgeFor(e, expanded, bright));
+      const focusOk =
+        focus.brightEdges === null || focus.brightEdges.has(edgeKey(e));
+      // With a kind chosen, an edge stays lit only when both ends hold a file
+      // of that kind — otherwise the dimmed nodes would still be joined.
+      const categoryOk =
+        categoryMatch === null ||
+        (categoryMatch.nodeHasMatch.get(e.source) === true &&
+          categoryMatch.nodeHasMatch.get(e.target) === true);
+      edges.push(edgeFor(e, expanded, focusOk && categoryOk));
     }
     return edges;
-  }, [datum, expanded, focus]);
+  }, [datum, expanded, focus, categoryMatch]);
 
   return (
     <ReactFlow
