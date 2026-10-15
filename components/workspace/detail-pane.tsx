@@ -17,7 +17,11 @@ import {
   neighboursOf,
   unimportedFiles,
 } from "@/lib/map/detail";
+import { buildInsights, type Insight } from "@/lib/map/insights";
 import { basename } from "@/lib/map/labels";
+import { walkGraph, type WalkDirection } from "@/lib/map/walk";
+import { adapterFor } from "@/lib/parser/adapter";
+import type { Edge } from "@/lib/parser/types";
 
 import { countCategories, fileKind, kindLabel, type FileCategory } from "./categories";
 import { useWorkspace } from "./workspace-context";
@@ -25,6 +29,10 @@ import { useWorkspace } from "./workspace-context";
 type Tab = "structure" | "explanation";
 
 const SUMMARY_LIMIT = 10;
+
+// Blast radius and the dependency chain both read two hops out. Deeper levels
+// stop being about this file and start being about the repository.
+const WALK_DEPTH = 2;
 
 export function DetailPane() {
   const [tab, setTab] = useState<Tab>("structure");
@@ -45,6 +53,7 @@ export function DetailPane() {
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
         {tab === "structure" ? <StructureTab /> : <ExplanationTab />}
       </div>
+      <InsightsPanel />
     </aside>
   );
 }
@@ -156,6 +165,7 @@ function RepoOverview() {
 
 function FileOverview({ path }: { path: string }) {
   const { parse, fileByPath } = useWorkspace();
+  const [walk, setWalk] = useState<WalkDirection | null>(null);
   const file = fileByPath.get(path);
   const { dependencies, dependents } = useMemo(
     () => neighboursOf(path, parse.edges),
@@ -182,28 +192,127 @@ function FileOverview({ path }: { path: string }) {
         <Meta label="Dependents" value={String(dependents.length)} tone="incoming" />
       </dl>
 
-      <SectionHeader count={dependencies.length}>Imports</SectionHeader>
-      {dependencies.length === 0 ? (
-        <Empty>This file imports nothing inside the repository.</Empty>
-      ) : (
-        <ul>
-          {dependencies.map((target) => (
-            <PathRow key={target} path={target} count={weight(target)} tone="outgoing" />
-          ))}
-        </ul>
-      )}
+      <div className="flex gap-1.5 px-3 pt-3">
+        <WalkButton
+          active={walk === "in"}
+          onClick={() => setWalk((current) => (current === "in" ? null : "in"))}
+        >
+          Blast radius
+        </WalkButton>
+        <WalkButton
+          active={walk === "out"}
+          onClick={() => setWalk((current) => (current === "out" ? null : "out"))}
+        >
+          Dependency chain
+        </WalkButton>
+      </div>
 
-      <SectionHeader count={dependents.length}>Imported by</SectionHeader>
-      {dependents.length === 0 ? (
-        <Empty>Nothing imports this file.</Empty>
+      {walk ? (
+        <WalkSection key={walk} path={path} edges={parse.edges} direction={walk} />
       ) : (
-        <ul>
-          {dependents.map((source) => (
-            <PathRow key={source} path={source} count={weight(source)} tone="incoming" />
-          ))}
-        </ul>
+        <>
+          <SectionHeader count={dependencies.length}>Imports</SectionHeader>
+          {dependencies.length === 0 ? (
+            <Empty>This file imports nothing inside the repository.</Empty>
+          ) : (
+            <ul>
+              {dependencies.map((target) => (
+                <PathRow key={target} path={target} count={weight(target)} tone="outgoing" />
+              ))}
+            </ul>
+          )}
+
+          <SectionHeader count={dependents.length}>Imported by</SectionHeader>
+          {dependents.length === 0 ? (
+            <Empty>Nothing imports this file.</Empty>
+          ) : (
+            <ul>
+              {dependents.map((source) => (
+                <PathRow key={source} path={source} count={weight(source)} tone="incoming" />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+// One of the two transitive views. They answer different questions — what breaks
+// (blast radius, inward) and what this needs (dependency chain, outward) — and
+// both are the same walk, so the copy is the only thing that differs.
+function WalkSection({
+  path,
+  edges,
+  direction,
+}: {
+  path: string;
+  edges: readonly Edge[];
+  direction: WalkDirection;
+}) {
+  const levels = useMemo(
+    () => walkGraph(path, edges, direction, WALK_DEPTH),
+    [path, edges, direction],
+  );
+  const total = levels.reduce((sum, level) => sum + level.paths.length, 0);
+  const heading = direction === "in" ? "Blast radius" : "Dependency chain";
+
+  if (total === 0) {
+    return (
+      <>
+        <SectionHeader>{heading}</SectionHeader>
+        <Empty>
+          {direction === "in"
+            ? "Nothing imports this file, so changing it breaks nothing else."
+            : "This file imports nothing else in the repository."}
+        </Empty>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <SectionHeader count={total}>
+        {`${heading} · ${WALK_DEPTH} levels`}
+      </SectionHeader>
+      {levels.map((level) => (
+        <div key={level.depth}>
+          <p className="px-3 pb-0.5 pt-2 text-[10px] text-muted">
+            {level.depth === 1 ? "Direct" : `${level.depth} steps away`}
+          </p>
+          <ul>
+            {level.paths.map((target) => (
+              <PathRow key={target} path={target} />
+            ))}
+          </ul>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function WalkButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`cursor-pointer rounded-[4px] border px-2 py-0.5 text-[11px] transition ${
+        active
+          ? "border-accent/60 bg-accent/10 text-accent"
+          : "border-border text-muted hover:text-text"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -260,6 +369,77 @@ function ExplanationTab() {
       <p className="text-[12px] leading-relaxed text-muted">
         No explanation yet. This tab fills in once there is a model call to write one.
       </p>
+    </div>
+  );
+}
+
+// The insights sit under everything and start closed, so they are never the
+// first thing you see. Each one is a sentence read off the edge list, not a
+// verdict, and the count is whole even when the list underneath is shortened.
+function InsightsPanel() {
+  const { parse } = useWorkspace();
+  const [open, setOpen] = useState(false);
+  const insights = useMemo(() => {
+    const patterns = adapterFor(parse.adapter).entryPoints ?? [];
+    const isEntryPoint = (path: string) =>
+      patterns.some((pattern) => pattern.test(path));
+    return buildInsights(parse.files, parse.edges, isEntryPoint);
+  }, [parse]);
+
+  return (
+    <section className="shrink-0 border-t border-border">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-[11px] text-muted transition hover:text-text"
+      >
+        <span className="font-medium">Insights</span>
+        <span aria-hidden>{open ? "▾" : "▸"}</span>
+      </button>
+      {open && (
+        <div className="scroll-thin max-h-[45vh] overflow-y-auto border-t border-border pb-3">
+          {insights.length === 0 ? (
+            <p className="px-3 py-3 text-[11px] text-muted">
+              Nothing stands out from this repository&apos;s edges.
+            </p>
+          ) : (
+            insights.map((insight) => (
+              <InsightSection key={insight.kind} insight={insight} />
+            ))
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function InsightSection({ insight }: { insight: Insight }) {
+  const hidden =
+    insight.kind === "cycle"
+      ? insight.total - insight.groups.length
+      : insight.total - (insight.groups[0]?.length ?? 0);
+  return (
+    <div className="pb-1 pt-3">
+      <div className="flex items-baseline justify-between gap-2 px-3 pb-1">
+        <p className="text-[11px] leading-snug text-muted">{insight.sentence}</p>
+        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted">
+          {insight.total}
+        </span>
+      </div>
+      {insight.groups.map((group, index) => (
+        <ul
+          key={index}
+          className={index > 0 ? "mt-1 border-t border-border/60 pt-1" : undefined}
+        >
+          {group.map((path) => (
+            <PathRow key={`${index}:${path}`} path={path} />
+          ))}
+        </ul>
+      ))}
+      {hidden > 0 && (
+        <p className="px-3 pt-1 text-[11px] tabular-nums text-muted">{hidden} more</p>
+      )}
     </div>
   );
 }
