@@ -18,6 +18,7 @@ import { auth } from "@clerk/nextjs/server";
 import { after } from "next/server";
 
 import { runAnalysis } from "@/lib/pipeline/run";
+import { clearAnalysisResults } from "@/lib/pipeline/requeue";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function POST(
@@ -63,10 +64,9 @@ export async function POST(
   const now = new Date().toISOString();
 
   if (requeue) {
-    // Only a finished analysis may be reset; a running one is left alone.
-    await client.from("edges").delete().eq("analysis_id", id);
-    await client.from("files").delete().eq("analysis_id", id);
-    await client.from("skipped_files").delete().eq("analysis_id", id);
+    // Only a finished analysis may be reset; a running one is left alone. Roles
+    // and routes clear with the files so the new result replaces the old whole.
+    await clearAnalysisResults(client, id);
     await client
       .from("analyses")
       .update({

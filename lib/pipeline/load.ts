@@ -16,9 +16,11 @@ import type {
   Coverage,
   Edge,
   EdgeKind,
+  FileRole,
   ParseCounts,
   ParsedFile,
   ParseResult,
+  Route,
   SkippedFile,
   SkipReason,
 } from "@/lib/parser/types";
@@ -190,6 +192,51 @@ export async function getStoredAnalysis(
     ...(row.detail === null ? {} : { detail: row.detail }),
   }));
 
+  const roleRows = await readAll<{ file_id: string; role: string }>((from, to) =>
+    client
+      .from("file_roles")
+      .select("file_id, role")
+      .eq("analysis_id", id)
+      .range(from, to),
+  );
+
+  const roles: FileRole[] = [];
+  for (const row of roleRows) {
+    const path = pathById.get(row.file_id);
+    // A role whose file was not stored is not reported, never guessed.
+    if (!path) continue;
+    roles.push({ path, role: row.role });
+  }
+
+  const routeRows = await readAll<{
+    file_id: string | null;
+    framework: string;
+    kind: string;
+    path: string;
+    method: string | null;
+  }>((from, to) =>
+    client
+      .from("routes")
+      .select("file_id, framework, kind, path, method")
+      .eq("analysis_id", id)
+      .order("path", { ascending: true })
+      .range(from, to),
+  );
+
+  const routes: Route[] = [];
+  for (const row of routeRows) {
+    const file = row.file_id === null ? undefined : pathById.get(row.file_id);
+    // A route is only shown with the file it was read from.
+    if (!file) continue;
+    routes.push({
+      framework: row.framework,
+      kind: row.kind === "page" ? "page" : "api",
+      method: row.method,
+      path: row.path,
+      file,
+    });
+  }
+
   const counts = readCounts(head.counts, files.length, skipped.length);
   const coverage = readCoverage(head.coverage, edges);
 
@@ -201,6 +248,8 @@ export async function getStoredAnalysis(
     counts,
     files,
     edges,
+    roles,
+    routes,
     skipped,
     coverage,
   };

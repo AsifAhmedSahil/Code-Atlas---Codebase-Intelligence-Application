@@ -2,10 +2,12 @@ import { promises as fs } from "node:fs";
 import type {
   Edge,
   EdgeKind,
+  FileRole,
   ImportOutcome,
   ImportRecord,
   ParsedFile,
   ParseResult,
+  Route,
   SkippedFile,
 } from "./types";
 
@@ -65,6 +67,16 @@ export function assertParseResult(value: unknown): asserts value is ParseResult 
   for (const file of value.files) assertFile(file);
   if (!Array.isArray(value.edges)) fail("edges is not an array");
   for (const edge of value.edges) assertEdge(edge);
+  // Absent in results written before roles and routes existed; validated when
+  // present so an older file still reads.
+  if (value.roles !== undefined) {
+    if (!Array.isArray(value.roles)) fail("roles is not an array");
+    for (const role of value.roles) assertRole(role);
+  }
+  if (value.routes !== undefined) {
+    if (!Array.isArray(value.routes)) fail("routes is not an array");
+    for (const route of value.routes) assertRoute(route);
+  }
   if (!Array.isArray(value.skipped)) fail("skipped is not an array");
   for (const skipped of value.skipped) assertSkipped(skipped);
   assertCoverage(value.coverage);
@@ -94,6 +106,23 @@ function assertSkipped(value: unknown): asserts value is SkippedFile {
   if (typeof value.reason !== "string") fail("skipped.reason is not a string");
   if (value.detail !== undefined && typeof value.detail !== "string") {
     fail("skipped.detail is not a string");
+  }
+}
+
+function assertRole(value: unknown): asserts value is FileRole {
+  if (!isRecord(value)) fail("role entry is not an object");
+  if (typeof value.path !== "string") fail("role.path is not a string");
+  if (typeof value.role !== "string") fail("role.role is not a string");
+}
+
+function assertRoute(value: unknown): asserts value is Route {
+  if (!isRecord(value)) fail("route entry is not an object");
+  if (typeof value.framework !== "string") fail("route.framework is not a string");
+  if (value.kind !== "page" && value.kind !== "api") fail("route.kind is unknown");
+  if (typeof value.path !== "string") fail("route.path is not a string");
+  if (typeof value.file !== "string") fail("route.file is not a string");
+  if (value.method !== null && typeof value.method !== "string") {
+    fail("route.method is not a string or null");
   }
 }
 

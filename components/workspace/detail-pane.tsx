@@ -20,13 +20,19 @@ import {
 import { buildInsights, type Insight } from "@/lib/map/insights";
 import { basename } from "@/lib/map/labels";
 import { walkGraph, type WalkDirection } from "@/lib/map/walk";
-import { adapterFor } from "@/lib/parser/adapter";
 import type { Edge } from "@/lib/parser/types";
+import { CONFIG_FILE, frameworkLabel, isEntryRole } from "@/lib/roles/taxonomy";
 
-import { countCategories, fileKind, kindLabel, type FileCategory } from "./categories";
+import {
+  countCategories,
+  fileKind,
+  kindLabel,
+  roleLabel,
+  type FileCategory,
+} from "./categories";
 import { useWorkspace } from "./workspace-context";
 
-type Tab = "structure" | "explanation";
+type Tab = "structure" | "routes" | "explanation";
 
 const SUMMARY_LIMIT = 10;
 
@@ -46,12 +52,21 @@ export function DetailPane() {
         <TabButton active={tab === "structure"} onClick={() => setTab("structure")}>
           Structure
         </TabButton>
+        <TabButton active={tab === "routes"} onClick={() => setTab("routes")}>
+          Routes
+        </TabButton>
         <TabButton active={tab === "explanation"} onClick={() => setTab("explanation")}>
           Explanation
         </TabButton>
       </div>
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
-        {tab === "structure" ? <StructureTab /> : <ExplanationTab />}
+        {tab === "structure" ? (
+          <StructureTab />
+        ) : tab === "routes" ? (
+          <RoutesTab />
+        ) : (
+          <ExplanationTab />
+        )}
       </div>
       <InsightsPanel />
     </aside>
@@ -124,7 +139,8 @@ function ManifestOverview({ path }: { path: string }) {
 // a status row saying how much the framework adapter could actually tell us.
 function RepoOverview() {
   const { parse } = useWorkspace();
-  const frameworks = parse.adapter === "none" ? "None detected" : parse.adapter;
+  const frameworks = frameworkLabel(parse.adapter);
+  const routeCount = parse.routes.length;
   const depended = useMemo(() => mostDependedOn(parse.files, SUMMARY_LIMIT), [parse.files]);
   const unimported = useMemo(() => unimportedFiles(parse.files), [parse.files]);
   const shown = unimported.slice(0, SUMMARY_LIMIT);
@@ -147,7 +163,11 @@ function RepoOverview() {
           value={String(parse.edges.length)}
           secondary={`${parse.coverage.importsSeen} seen`}
         />
-        <SummaryColumn label="Routes" value="—" secondary="none detected" />
+        <SummaryColumn
+          label="Routes"
+          value={routeCount === 0 ? "—" : String(routeCount)}
+          secondary={routeCount === 0 ? "none detected" : "in the Routes tab"}
+        />
       </div>
 
       <SectionHeader>Most depended on by files importing it</SectionHeader>
@@ -186,7 +206,9 @@ function RepoOverview() {
 
       <div className="mt-4 border-t border-border px-3 pt-3">
         <p className="text-[11px] leading-relaxed text-muted">
-          Framework adapter · {frameworks}. Routes and conventions are not detected.
+          {parse.adapter === "none"
+            ? "No framework adapter matched. Roles come from file extensions, and no routes were read."
+            : `Framework adapter · ${frameworks}. Roles and routes come from its file conventions.`}
         </p>
       </div>
     </div>
@@ -194,9 +216,17 @@ function RepoOverview() {
 }
 
 function FileOverview({ path }: { path: string }) {
-  const { parse, fileByPath } = useWorkspace();
+  const { parse, fileByPath, roleByPath } = useWorkspace();
   const [walk, setWalk] = useState<WalkDirection | null>(null);
   const file = fileByPath.get(path);
+  // The parser's role is the truth; the extension is only the floor for a file
+  // that no adapter parsed (an older result, or a repository with no adapter).
+  const role = roleByPath.get(path);
+  const kind = role
+    ? roleLabel(parse.adapter, role)
+    : file
+      ? kindLabel(fileKind(file))
+      : "Unknown";
   const { dependencies, dependents } = useMemo(
     () => neighboursOf(path, parse.edges),
     [path, parse.edges],
@@ -211,7 +241,7 @@ function FileOverview({ path }: { path: string }) {
       </div>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border px-3 pt-3">
-        <Meta label="Kind" value={file ? kindLabel(fileKind(file)) : "Unknown"} />
+        <Meta label="Kind" value={kind} />
         <Meta label="Lines" value={file ? String(file.lines) : "—"} />
         <Meta label="Folder" value={file?.folder ?? "—"} mono span />
         <Meta
@@ -347,15 +377,15 @@ function WalkButton({
 }
 
 function FolderOverview({ id }: { id: string }) {
-  const { parse, labels, fileByPath, nodeById, folded } = useWorkspace();
+  const { parse, labels, fileByPath, nodeById, folded, roleByPath } = useWorkspace();
   const node = nodeById.get(id);
   const composition = useMemo<FileCategory[]>(() => {
     if (!node) return [];
     const files = node.files
       .map((file) => fileByPath.get(file))
       .filter((file): file is NonNullable<typeof file> => file !== undefined);
-    return countCategories(files);
-  }, [node, fileByPath]);
+    return countCategories(files, roleByPath, parse.adapter);
+  }, [node, fileByPath, roleByPath, parse.adapter]);
   const stats = useMemo(
     () =>
       node
@@ -383,12 +413,84 @@ function FolderOverview({ id }: { id: string }) {
         <Meta label="Imported from within" value={String(stats.fromWithin)} />
       </dl>
 
-      <SectionHeader>Kinds of file inside</SectionHeader>
+      <SectionHeader>Roles in this folder</SectionHeader>
       <ul>
         {composition.map((category) => (
-          <KindRow key={category.kind} category={category} />
+          <KindRow key={category.role} category={category} />
         ))}
       </ul>
+    </div>
+  );
+}
+
+// The routes read out of the syntax, as a table. A row is shown only for a route
+// whose method and full pattern were both recovered exactly; a repository with
+// no adapter, or one whose routes are not recoverable, shows an empty table and
+// says so rather than listing a guess.
+function RoutesTab() {
+  const { parse, setSelection } = useWorkspace();
+  const routes = parse.routes;
+
+  if (routes.length === 0) {
+    return (
+      <div className="px-3 py-3">
+        <p className="text-[11px] leading-relaxed text-muted">
+          No routes were recovered from this repository. A route is shown only
+          when its method and full path can be read from the code exactly.
+        </p>
+      </div>
+    );
+  }
+
+  const pageCount = routes.filter((route) => route.kind === "page").length;
+  const apiCount = routes.length - pageCount;
+
+  return (
+    <div className="flex flex-col pb-4">
+      <div className="px-3 pb-2 pt-3">
+        <p className="text-[11px] text-muted">
+          <span className="font-mono tabular-nums text-text">{pageCount}</span> pages ·{" "}
+          <span className="font-mono tabular-nums text-text">{apiCount}</span> API
+        </p>
+      </div>
+      <table className="w-full border-collapse text-left">
+        <thead>
+          <tr className="border-y border-border text-[10px] text-muted">
+            <th className="px-3 py-1 font-medium">Method</th>
+            <th className="px-2 py-1 font-medium">Path</th>
+          </tr>
+        </thead>
+        <tbody>
+          {routes.map((route) => (
+            <tr
+              key={`${route.method ?? "PAGE"}\u0000${route.path}\u0000${route.file}`}
+              className="border-b border-border/60"
+            >
+              <td className="whitespace-nowrap px-3 py-1 align-top font-mono text-[10px] text-muted">
+                {route.method ?? (route.kind === "page" ? "page" : "—")}
+              </td>
+              <td className="px-2 py-1 align-top">
+                <button
+                  type="button"
+                  title={route.path}
+                  onClick={() => setSelection({ kind: "file", path: route.file })}
+                  className="break-all text-left font-mono text-[11px] text-text transition hover:text-accent"
+                >
+                  {route.path}
+                </button>
+                <button
+                  type="button"
+                  title={route.file}
+                  onClick={() => setSelection({ kind: "file", path: route.file })}
+                  className="mt-0.5 block max-w-full truncate text-left font-mono text-[10px] text-muted transition hover:text-accent"
+                >
+                  {route.file}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -407,14 +509,16 @@ function ExplanationTab() {
 // first thing you see. Each one is a sentence read off the edge list, not a
 // verdict, and the count is whole even when the list underneath is shortened.
 function InsightsPanel() {
-  const { parse } = useWorkspace();
+  const { parse, roleByPath } = useWorkspace();
   const [open, setOpen] = useState(false);
   const insights = useMemo(() => {
-    const patterns = adapterFor(parse.adapter).entryPoints ?? [];
+    // A file reached by the framework rather than by an import — a page route,
+    // an API endpoint, a controller, a tooling config — is not "imported by
+    // nothing". The framework is the importer.
     const isEntryPoint = (path: string) =>
-      patterns.some((pattern) => pattern.test(path));
+      isEntryRole(roleByPath.get(path)) || CONFIG_FILE.test(path);
     return buildInsights(parse.files, parse.edges, isEntryPoint);
-  }, [parse]);
+  }, [parse, roleByPath]);
 
   return (
     <section className="shrink-0 border-t border-border">

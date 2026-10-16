@@ -94,6 +94,26 @@ function report(result: ParseResult, directory: string): string {
   lines.push(`  failed         ${coverage.failed}`);
   lines.push(`  re-exports     found ${coverage.reExportsFound}, resolved ${coverage.reExportsResolved}`);
 
+  if (result.roles.length > 0) {
+    lines.push("");
+    lines.push(`roles     ${result.roles.length}`);
+    const roleGroups = groupBy(result.roles, (role) => role.role);
+    for (const [role, items] of [...roleGroups.entries()].sort(
+      (a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]),
+    )) {
+      lines.push(`  ${role.padEnd(16)} ${items.length}`);
+    }
+  }
+
+  lines.push("");
+  lines.push(`routes    ${result.routes.length}`);
+  for (const route of result.routes.slice(0, 20)) {
+    lines.push(`  ${(route.method ?? "PAGE").padEnd(7)} ${route.path}   (${route.file})`);
+  }
+  if (result.routes.length > 20) {
+    lines.push(`  ... and ${result.routes.length - 20} more`);
+  }
+
   const skippedGroups = groupBy(result.skipped, (file) => file.reason);
   if (skippedGroups.size > 0) {
     lines.push("");

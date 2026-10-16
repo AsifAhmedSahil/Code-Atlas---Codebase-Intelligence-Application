@@ -21,13 +21,13 @@ export function FileRail({ categories, total }: FileRailProps) {
       </div>
       <ul className="flex flex-col">
         {categories.map((one) => {
-          const active = category === one.kind;
+          const active = category === one.role;
           return (
-            <li key={one.kind}>
+            <li key={one.role}>
               <button
                 type="button"
                 aria-pressed={active}
-                onClick={() => setCategory(active ? null : one.kind)}
+                onClick={() => setCategory(active ? null : one.role)}
                 title={
                   active
                     ? `Show everything again`
@@ -53,7 +53,7 @@ export function FileRail({ categories, total }: FileRailProps) {
       </ul>
       {category !== null && (
         <p className="px-3 pt-2 text-[11px] leading-relaxed text-muted">
-          Everything except {categories.find((one) => one.kind === category)?.name} is dimmed.
+          Everything except {categories.find((one) => one.role === category)?.name} is dimmed.
           Click again to show all.
         </p>
       )}
