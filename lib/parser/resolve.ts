@@ -45,6 +45,38 @@ function isNodeBuiltin(specifier: string): boolean {
   return BUILTIN_MODULES.has(bare) || BUILTIN_MODULES.has(`node:${bare}`);
 }
 
+// A bare specifier is neither relative nor absolute: it names a package or a
+// tsconfig alias rather than a path.
+function isBareSpecifier(specifier: string): boolean {
+  return !specifier.startsWith(".") && !specifier.startsWith("/");
+}
+
+// Does a bare specifier match one of the tsconfig `paths` keys? A key may
+// contain a single `*`; the rest must match literally.
+function matchesAlias(specifier: string, aliases: readonly string[]): boolean {
+  for (const alias of aliases) {
+    const star = alias.indexOf("*");
+    if (star === -1) {
+      if (specifier === alias) return true;
+      continue;
+    }
+    const prefix = alias.slice(0, star);
+    const suffix = alias.slice(star + 1);
+    if (
+      specifier.length >= prefix.length + suffix.length &&
+      specifier.startsWith(prefix) &&
+      specifier.endsWith(suffix)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasAssetExtension(specifier: string): boolean {
+  return ASSET_EXTENSIONS.includes(path.extname(specifier).toLowerCase());
+}
+
 export function loadCompilerOptions(root: string): ts.CompilerOptions {
   const configPath = ts.findConfigFile(root, ts.sys.fileExists, "tsconfig.json");
   if (configPath) {
@@ -73,6 +105,10 @@ export function loadCompilerOptions(root: string): ts.CompilerOptions {
 export interface ResolveContext {
   root: string;
   options: ts.CompilerOptions;
+  // The tsconfig `paths` keys ("@/*", "~/*", …). A bare specifier that matches
+  // one addresses the project's own modules, so an unresolved one is a real gap
+  // and is never swept up as an external package.
+  aliases: readonly string[];
   // Lowercased repository-relative path -> canonical path, to resolve the case
   // differences Windows allows.
   nodeByPath: ReadonlyMap<string, string>;
@@ -112,11 +148,26 @@ export function resolveImport(
         : "not-a-source-module";
       return { outcome: "excluded", reason, target: asset };
     }
-    const relative = specifier.startsWith(".") || specifier.startsWith("/");
-    return {
-      outcome: "failed",
-      reason: relative ? "file-not-found" : "module-not-found",
-    };
+
+    if (isBareSpecifier(specifier)) {
+      // A bare specifier that matches a tsconfig alias points inside the
+      // repository: an unresolved one is a genuine gap, so it stays a failure.
+      if (matchesAlias(specifier, context.aliases)) {
+        return { outcome: "failed", reason: "module-not-found" };
+      }
+      // A bare specifier naming a non-code file is a package's own asset (a
+      // stylesheet, say) rather than a module. That is deliberately excluded,
+      // exactly like a relative asset, not a missing internal import.
+      if (hasAssetExtension(specifier)) {
+        return { outcome: "excluded", reason: "not-a-source-module" };
+      }
+      // Everything else is a third-party package. It is unresolved only because
+      // its code is not in the analysed tree; it points outside the repository,
+      // so it is not an internal gap.
+      return { outcome: "outside", reason: "external-package-unresolved" };
+    }
+
+    return { outcome: "failed", reason: "file-not-found" };
   }
 
   const absolute = path.normalize(resolved.resolvedFileName);

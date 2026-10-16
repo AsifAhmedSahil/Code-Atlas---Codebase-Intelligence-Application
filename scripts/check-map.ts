@@ -5,7 +5,11 @@ import { assertParseResult } from "../lib/parser/io";
 import { foldMap } from "../lib/map/fold";
 import { resolveNodeLabels } from "../lib/map/labels";
 
-const path = process.argv[2] ?? "data/preview-analysis.json";
+const path = process.argv[2];
+if (!path) {
+  console.error("Usage: tsx scripts/check-map.ts <parse-result.json>");
+  process.exit(1);
+}
 const data = JSON.parse(readFileSync(path, "utf8"));
 assertParseResult(data);
 
