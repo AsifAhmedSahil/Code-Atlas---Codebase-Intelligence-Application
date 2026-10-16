@@ -6,6 +6,7 @@
 
 import type { FoldedMap } from "@/lib/map/fold";
 import type { ParseResult } from "@/lib/parser/types";
+import type { ReactNode } from "react";
 
 import type { FileCategory } from "./categories";
 import { DetailPane } from "./detail-pane";
@@ -19,11 +20,15 @@ export function WorkspaceView({
   folded,
   labels,
   categories,
+  banner,
 }: {
   parse: ParseResult;
   folded: FoldedMap;
   labels: Record<string, string>;
   categories: FileCategory[];
+  // Rendered above the map, inside the middle column, so a note about the map
+  // reads as part of the map rather than as a page banner.
+  banner?: ReactNode;
 }) {
   const datum = { nodes: folded.nodes, edges: folded.edges, labels };
 
@@ -31,7 +36,12 @@ export function WorkspaceView({
     <WorkspaceProvider parse={parse} folded={folded} labels={labels}>
       <WorkspaceShell
         rail={<FileRail categories={categories} total={parse.counts.parsed} />}
-        canvas={<MapCanvas datum={datum} />}
+        canvas={
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {banner}
+            <MapCanvas datum={datum} />
+          </div>
+        }
         detail={<DetailPane />}
       />
     </WorkspaceProvider>

@@ -129,6 +129,14 @@ function assertCoverage(value: unknown): void {
   ] as const) {
     if (typeof value[key] !== "number") fail(`coverage.${key} is not a number`);
   }
+  // Absent in results written before `externalUnresolved` existed; validated
+  // when present so an older file still reads.
+  if (
+    value.externalUnresolved !== undefined &&
+    typeof value.externalUnresolved !== "number"
+  ) {
+    fail("coverage.externalUnresolved is not a number");
+  }
   if (!isRecord(value.byKind)) fail("coverage.byKind is not an object");
   for (const kind of EDGE_KINDS) {
     if (typeof value.byKind[kind] !== "number") {

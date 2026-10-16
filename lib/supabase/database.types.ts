@@ -16,31 +16,61 @@ export type Database = {
     Tables: {
       analyses: {
         Row: {
+          adapter: string | null
+          commit_sha: string | null
+          counts: Json | null
+          coverage: Json | null
           created_at: string
+          error: string | null
+          error_stage: string | null
           finished_at: string | null
           id: string
           organization_id: string
           project_id: string
+          root: string | null
+          stage: string | null
+          stage_message: string | null
           started_at: string | null
           status: string
+          updated_at: string
         }
         Insert: {
+          adapter?: string | null
+          commit_sha?: string | null
+          counts?: Json | null
+          coverage?: Json | null
           created_at?: string
+          error?: string | null
+          error_stage?: string | null
           finished_at?: string | null
           id?: string
           organization_id: string
           project_id: string
+          root?: string | null
+          stage?: string | null
+          stage_message?: string | null
           started_at?: string | null
           status?: string
+          updated_at?: string
         }
         Update: {
+          adapter?: string | null
+          commit_sha?: string | null
+          counts?: Json | null
+          coverage?: Json | null
           created_at?: string
+          error?: string | null
+          error_stage?: string | null
           finished_at?: string | null
           id?: string
           organization_id?: string
           project_id?: string
+          root?: string | null
+          stage?: string | null
+          stage_message?: string | null
           started_at?: string | null
           status?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -215,22 +245,46 @@ export type Database = {
       files: {
         Row: {
           analysis_id: string
+          bytes: number | null
           created_at: string
+          extension: string | null
+          fan_in: number
+          fan_out: number
+          folder: string
+          hash: string | null
           id: string
+          is_module: boolean
+          lines: number | null
           organization_id: string
           path: string
         }
         Insert: {
           analysis_id: string
+          bytes?: number | null
           created_at?: string
+          extension?: string | null
+          fan_in?: number
+          fan_out?: number
+          folder?: string
+          hash?: string | null
           id?: string
+          is_module?: boolean
+          lines?: number | null
           organization_id: string
           path: string
         }
         Update: {
           analysis_id?: string
+          bytes?: number | null
           created_at?: string
+          extension?: string | null
+          fan_in?: number
+          fan_out?: number
+          folder?: string
+          hash?: string | null
           id?: string
+          is_module?: boolean
+          lines?: number | null
           organization_id?: string
           path?: string
         }
@@ -420,6 +474,51 @@ export type Database = {
           },
         ]
       }
+      skipped_files: {
+        Row: {
+          analysis_id: string
+          created_at: string
+          detail: string | null
+          id: string
+          organization_id: string
+          path: string
+          reason: string
+        }
+        Insert: {
+          analysis_id: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          organization_id: string
+          path: string
+          reason: string
+        }
+        Update: {
+          analysis_id?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          organization_id?: string
+          path?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skipped_files_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skipped_files_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -476,7 +575,8 @@ export type TablesInsert<
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
@@ -501,7 +601,8 @@ export type TablesUpdate<
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
@@ -532,9 +633,7 @@ export type Enums<
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
@@ -543,14 +642,26 @@ export type CompositeTypes<
   CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof (DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"] &
+        DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["Views"])
     : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? (DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"] &
+      DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["Views"])[CompositeTypeName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : PublicCompositeTypeNameOrOptions extends keyof (DefaultSchema["CompositeTypes"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["CompositeTypes"] &
+        DefaultSchema["Views"])[PublicCompositeTypeNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
     : never
 
 export const Constants = {

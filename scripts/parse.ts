@@ -89,6 +89,7 @@ function report(result: ParseResult, directory: string): string {
   lines.push(`  imports seen   ${coverage.importsSeen}`);
   lines.push(`  resolved       ${coverage.resolved}`);
   lines.push(`  outside        ${coverage.outside}`);
+  lines.push(`    external     ${coverage.externalUnresolved} unresolved package imports`);
   lines.push(`  excluded       ${coverage.excluded}`);
   lines.push(`  failed         ${coverage.failed}`);
   lines.push(`  re-exports     found ${coverage.reExportsFound}, resolved ${coverage.reExportsResolved}`);

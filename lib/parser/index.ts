@@ -6,7 +6,7 @@ import { MODULE_EXTENSIONS } from "./constants";
 import { computeDegrees, dedupeEdges } from "./graph";
 import { extractImports } from "./imports";
 import { countLines, parentFolder } from "./paths";
-import { loadCompilerOptions, resolveImport } from "./resolve";
+import { loadCompilerOptions, resolveImport, type ResolveContext } from "./resolve";
 import { isIgnoredDirectoryName, walkRepository } from "./walk";
 import type {
   Coverage,
@@ -100,9 +100,14 @@ export async function parseRepository(
   const nodeByPath = new Map<string, string>();
   for (const file of files) nodeByPath.set(file.path.toLowerCase(), file.path);
 
-  const resolveContext = {
+  // The compiler options are read once: the resolver needs them, and their
+  // `paths` keys are the aliases that tell an internal bare import from a
+  // package one.
+  const compilerOptions = loadCompilerOptions(root);
+  const resolveContext: ResolveContext = {
     root,
-    options: loadCompilerOptions(root),
+    options: compilerOptions,
+    aliases: Object.keys(compilerOptions.paths ?? {}),
     nodeByPath,
     isIgnored: (relativePath: string) =>
       relativePath.split("/").some((segment) => isIgnoredDirectoryName(segment)),
@@ -205,6 +210,7 @@ function summarize(records: readonly ImportRecord[]): Coverage {
 
   let resolved = 0;
   let outside = 0;
+  let externalUnresolved = 0;
   let excluded = 0;
   let failed = 0;
   let reExportsFound = 0;
@@ -223,6 +229,7 @@ function summarize(records: readonly ImportRecord[]): Coverage {
         break;
       case "outside": {
         outside += 1;
+        if (record.reason === "external-package-unresolved") externalUnresolved += 1;
         const key = record.specifier ?? "";
         if (outsideExamples.length < EXAMPLE_LIMIT && !seenOutside.has(key)) {
           seenOutside.add(key);
@@ -252,6 +259,7 @@ function summarize(records: readonly ImportRecord[]): Coverage {
     importsSeen: records.length,
     resolved,
     outside,
+    externalUnresolved,
     excluded,
     failed,
     byKind,

@@ -5,7 +5,8 @@
 export type EdgeKind = "import" | "re-export" | "dynamic";
 
 // What happened to one import, module by module. Every import lands in exactly
-// one bucket, so the four counts add up to `importsSeen`.
+// one bucket, so the four counts add up to `importsSeen`. `externalUnresolved`
+// is a subset of `outside`, never a fifth bucket.
 export type ImportOutcome = "resolved" | "outside" | "excluded" | "failed";
 
 export interface ParsedFile {
@@ -61,7 +62,14 @@ export interface Coverage {
   importsSeen: number;
   resolved: number;
   outside: number;
+  // The subset of `outside` that is a bare package import TypeScript could not
+  // resolve: a dependency the repository declares but that is not present in
+  // the analysed tree (an archive carries no node_modules). It is a gap in the
+  // external direction, not an internal one, so it is kept out of `failed`.
+  externalUnresolved: number;
   excluded: number;
+  // Imports that pointed inside the repository and did not resolve to a file.
+  // These are the real gaps in the inner graph.
   failed: number;
   byKind: Record<EdgeKind, number>;
   // Acceptance numbers for barrel files: how many re-exports were seen against

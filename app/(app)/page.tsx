@@ -1,6 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
+import Link from "next/link";
 
 import { InviteForm } from "@/components/invite-form";
+import { LiveRunStatus } from "@/components/live-run-status";
+import { RepoForm } from "@/components/repo-form";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /*
@@ -19,17 +22,10 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 export const instant = false;
 
 /*
- * A run's status is the one place colour carries meaning here. Each state gets
- * its node and its word from the same token, so the rail and the label can
- * never disagree.
+ * A run's status is the one place colour carries meaning here, and a finished
+ * run is the only one whose word is drawn here: a run still going is rendered
+ * by LiveRunStatus, which is where the live state and its colour live.
  */
-const STATUS_NODE: Record<string, string> = {
-  complete: "bg-incoming",
-  running: "bg-accent",
-  queued: "bg-muted",
-  failed: "bg-outgoing",
-};
-
 const STATUS_WORD: Record<string, string> = {
   complete: "text-incoming",
   running: "text-accent",
@@ -60,14 +56,14 @@ export default async function WorkspacePage() {
   const supabase = createServerSupabaseClient();
   const { data: analyses } = await supabase
     .from("analyses")
-    .select("id, status, created_at, projects ( name, repo_url )")
+    .select("id, status, stage_message, created_at, projects ( name, repo_url )")
     .order("created_at", { ascending: false });
 
   const runs = analyses ?? [];
 
   return (
     <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-14">
-      <header className="flex max-w-[60ch] flex-col gap-3 pb-12">
+      <header className="flex max-w-[60ch] flex-col gap-3 pb-10">
         <h1 className="font-display text-[2rem] leading-[1.05] tracking-[-0.02em] text-text">
           {orgName ?? "Workspace"}
         </h1>
@@ -77,46 +73,38 @@ export default async function WorkspacePage() {
         </p>
       </header>
 
+      <section className="mb-12 rounded-lg border border-border p-5">
+        <RepoForm />
+      </section>
+
       <section className="flex flex-col gap-6">
         <div className="flex items-baseline justify-between gap-4">
-          <h2 className="font-display text-[15px] tracking-[-0.01em] text-text">
-            Mapping runs
+          <h2 className="text-[13px] font-medium tracking-[-0.01em] text-text">
+            Runs
           </h2>
-          <span className="font-mono text-[11px] tabular-nums text-muted">
-            {runs.length} {runs.length === 1 ? "run" : "runs"}
-          </span>
+          {runs.length > 0 ? (
+            <span className="font-mono text-[11px] tabular-nums text-muted">
+              {runs.length}
+            </span>
+          ) : null}
         </div>
 
         {runs.length > 0 ? (
           <ol className="flex flex-col">
-            {runs.map((analysis, index) => {
-              const isLast = index === runs.length - 1;
-              const node = STATUS_NODE[analysis.status] ?? "bg-muted";
+            {runs.map((analysis) => {
+              const unfinished =
+                analysis.status === "queued" || analysis.status === "running";
               const word = STATUS_WORD[analysis.status] ?? "text-muted";
 
               return (
-                <li
-                  key={analysis.id}
-                  className="grid grid-cols-[1rem_1fr] gap-x-4"
-                >
-                  <div className="flex flex-col items-center">
-                    <span
-                      className={`mt-6 size-2 rounded-full ${node}`}
-                      aria-hidden
-                    />
-                    {isLast ? null : (
-                      <span className="w-px flex-1 bg-border" aria-hidden />
-                    )}
-                  </div>
-
-                  <div
-                    className={`flex flex-col gap-1 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 ${
-                      isLast ? "" : "border-b border-border"
-                    }`}
+                <li key={analysis.id} className="border-b border-border last:border-0">
+                  <Link
+                    href={`/analyses/${analysis.id}`}
+                    className="flex flex-col gap-3 px-2 py-4 transition-colors hover:bg-raised sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex min-w-0 flex-col gap-0.5">
+                    <div className="flex min-w-0 flex-col">
                       <span className="truncate text-[14px] text-text">
-                        {analysis.projects?.name ?? "Unknown project"}
+                        {analysis.projects?.name ?? "Repository"}
                       </span>
                       {analysis.projects?.repo_url ? (
                         <span className="truncate font-mono text-[11px] text-muted">
@@ -125,10 +113,18 @@ export default async function WorkspacePage() {
                       ) : null}
                     </div>
 
-                    <div className="flex shrink-0 items-baseline gap-4">
-                      <span className={`text-[12px] ${word}`}>
-                        {analysis.status}
-                      </span>
+                    <div className="flex shrink-0 items-start gap-4">
+                      {unfinished ? (
+                        <LiveRunStatus
+                          analysisId={analysis.id}
+                          status={analysis.status}
+                          stageMessage={analysis.stage_message}
+                        />
+                      ) : (
+                        <span className={`text-[12px] ${word}`}>
+                          {analysis.status}
+                        </span>
+                      )}
                       <time
                         dateTime={analysis.created_at}
                         className="font-mono text-[11px] tabular-nums text-muted"
@@ -136,7 +132,7 @@ export default async function WorkspacePage() {
                         {formatWhen(analysis.created_at)}
                       </time>
                     </div>
-                  </div>
+                  </Link>
                 </li>
               );
             })}
@@ -145,7 +141,7 @@ export default async function WorkspacePage() {
           <div className="rounded-lg border border-dashed border-border px-6 py-14 text-center">
             <p className="text-[14px] text-text">No runs yet</p>
             <p className="mx-auto mt-1 max-w-[44ch] text-[13px] leading-relaxed text-muted">
-              When this workspace maps a repository, its files, routes, and
+              Paste a public repository URL above. Its files, routes, and
               dependencies will be charted here.
             </p>
           </div>
