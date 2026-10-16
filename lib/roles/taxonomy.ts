@@ -81,6 +81,16 @@ const FRAMEWORK_ROLES: Record<string, readonly RoleSpec[]> = {
     { role: "entity", name: "Entities", swatch: "bg-file-ts" },
     { role: UNCLASSIFIED_ROLE, name: "Unclassified", swatch: "bg-file-other" },
   ],
+  express: [
+    { role: "controller", name: "Controllers", swatch: "bg-file-js" },
+    { role: "route", name: "Routes", swatch: "bg-file-js" },
+    { role: "middleware", name: "Middleware", swatch: "bg-file-js" },
+    { role: "service", name: "Services", swatch: "bg-file-ts" },
+    { role: "repository", name: "Repositories", swatch: "bg-file-ts" },
+    { role: "model", name: "Models", swatch: "bg-file-ts" },
+    { role: "config", name: "Config files", swatch: "bg-file-dts" },
+    { role: UNCLASSIFIED_ROLE, name: "Unclassified", swatch: "bg-file-other" },
+  ],
   react: [
     { role: "component", name: "Components", swatch: "bg-file-tsx" },
     { role: "hook", name: "Hooks", swatch: "bg-file-ts" },
@@ -103,7 +113,8 @@ export function roleSpecFor(framework: string, role: string): RoleSpec | undefin
 // Roles a framework reaches by convention rather than by an import, so a file
 // holding one is not "a file nothing imports" — the framework is the importer.
 // A Next.js page and a NestJS controller are loaded by the runtime, so holding
-// one is enough to excuse a file from that verdict.
+// one is enough to excuse a file from that verdict. An Express route and
+// controller are the same: the app registers them by convention.
 const ENTRY_ROLES: ReadonlySet<string> = new Set([
   "page-route",
   "api-endpoint",
@@ -115,6 +126,7 @@ const ENTRY_ROLES: ReadonlySet<string> = new Set([
   "config",
   "test",
   "controller",
+  "route",
 ]);
 
 export function isEntryRole(role: string | undefined): boolean {
@@ -131,6 +143,7 @@ const FRAMEWORK_LABEL: Record<string, string> = {
   nextjs: "Next.js",
   nestjs: "NestJS",
   react: "React",
+  express: "Express",
 };
 
 export function frameworkLabel(framework: string): string {
