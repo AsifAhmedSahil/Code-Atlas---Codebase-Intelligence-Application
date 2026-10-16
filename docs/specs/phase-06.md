@@ -17,6 +17,10 @@
   in it**, rather than removing it. Each open panel shows how many of its files
   matched, so you can see which parts of the repository the category lives in
   without losing the shape of the whole thing.
+- **The repository manifest is visible.** `package.json` is shown on the map,
+  inside its folder and dimmed, so it can be found even though no source file
+  imports it. It carries no edges and is not counted as source: it never changes
+  the rail's numbers, the insights, or either walk.
 
 ## Constraints
 

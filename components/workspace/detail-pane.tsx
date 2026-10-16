@@ -83,10 +83,40 @@ function TabButton({
 }
 
 function StructureTab() {
-  const { selection } = useWorkspace();
+  const { selection, folded } = useWorkspace();
   if (!selection) return <RepoOverview />;
   if (selection.kind === "node") return <FolderOverview id={selection.id} />;
+  if (folded.manifestFiles.includes(selection.path)) {
+    return <ManifestOverview path={selection.path} />;
+  }
   return <FileOverview path={selection.path} />;
+}
+
+// The repository manifest, shown so it can be found even though nothing imports
+// it. It is drawn like a file but sits outside the graph: no edges, so there is
+// no blast radius, no chain, and no "nothing imports this" verdict to give.
+function ManifestOverview({ path }: { path: string }) {
+  const dot = path.lastIndexOf(".");
+  const format = dot === -1 ? "—" : path.slice(dot);
+
+  return (
+    <div className="flex flex-col pb-4">
+      <div className="px-3 pt-3">
+        <Breadcrumb path={path} />
+      </div>
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border px-3 pt-3">
+        <Meta label="Kind" value="Manifest" />
+        <Meta label="Format" value={format} mono />
+      </dl>
+
+      <SectionHeader>Not source</SectionHeader>
+      <p className="px-3 text-[11px] leading-relaxed text-muted">
+        Read by tooling, not imported by any source file. It is shown on the map
+        so it can be found, but it is not part of the dependency graph.
+      </p>
+    </div>
+  );
 }
 
 // The first thing anyone sees. Name, framework and three summary columns, then
