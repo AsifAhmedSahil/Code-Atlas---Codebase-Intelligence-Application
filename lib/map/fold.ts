@@ -32,12 +32,29 @@ export interface FoldedMap {
   // drawn: a node is not its own dependency.
   internalEdges: number;
   fileToNode: Record<string, string>;
+  // The repository manifest files that are drawn but are not source: they sit in
+  // a panel like any other file, yet no edge can point at them.
+  manifestFiles: string[];
 }
 
 export function parentFolder(folder: string): string | undefined {
   if (folder === ".") return undefined;
   const i = folder.lastIndexOf("/");
   return i === -1 ? "." : folder.slice(0, i);
+}
+
+// The manifest is the one non-source file the map shows, so it can be found even
+// though nothing imports it. Everything else the parser skips stays off the map.
+const MANIFEST_FILE = "package.json";
+
+function fileName(path: string): string {
+  const i = path.lastIndexOf("/");
+  return i === -1 ? path : path.slice(i + 1);
+}
+
+function folderOfFile(path: string): string {
+  const i = path.lastIndexOf("/");
+  return i === -1 ? "." : path.slice(0, i);
 }
 
 function depth(folder: string): number {
@@ -128,6 +145,22 @@ export function foldMap(
     set.add(file.path);
   }
 
+  // The repository manifest joins its folder's files so it can be found, even
+  // though the parser skipped it and no edge touches it.
+  const manifestFiles: string[] = [];
+  for (const skipped of result.skipped) {
+    if (fileName(skipped.path) !== MANIFEST_FILE) continue;
+    const folder = folderOfFile(skipped.path);
+    let set = folderFiles.get(folder);
+    if (!set) {
+      set = new Set();
+      folderFiles.set(folder, set);
+    }
+    set.add(skipped.path);
+    manifestFiles.push(skipped.path);
+  }
+  manifestFiles.sort();
+
   // Every ancestor of a folder exists as a folder too, even with zero direct
   // files, so a lone file can always merge upward until it has company.
   for (const folder of Array.from(folderFiles.keys())) {
@@ -151,6 +184,7 @@ export function foldMap(
         edges: folded.edges,
         internalEdges: folded.internalEdges,
         fileToNode: Object.fromEntries(fileToNode),
+        manifestFiles,
       };
     }
   }

@@ -49,6 +49,9 @@ interface FolderNodeData {
   selectedFile: string | null;
   dimmed: boolean;
   rowDim: ReadonlySet<string> | null;
+  // Manifest files shown in this panel: not source, so no edge touches them and
+  // their rows rest dimmed.
+  manifest: ReadonlySet<string>;
   // The files in this node that match the rail's chosen kind, or null when no
   // kind is chosen. Rows outside it dim, and its size is the panel's match count.
   matched: ReadonlySet<string> | null;
@@ -250,11 +253,15 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
         className="scroll-thin nowheel min-h-0 flex-1 overflow-y-auto"
       >
         {files.map((file) => {
-          const dimRow =
-            (data.rowDim !== null && !data.rowDim.has(file)) ||
-            (data.matched !== null && !data.matched.has(file));
           const isSelectedFile = data.selectedFile === file;
           const isHoveredFile = hover?.kind === "file" && hover.path === file;
+          const lit = isSelectedFile || isHoveredFile;
+          const isManifest = data.manifest.has(file);
+          const dimRow =
+            !lit &&
+            (isManifest ||
+              (data.rowDim !== null && !data.rowDim.has(file)) ||
+              (data.matched !== null && !data.matched.has(file)));
           return (
             <div
               key={file}
@@ -269,9 +276,9 @@ function FolderNodeComponent({ id, data }: NodeProps<FolderNode>) {
                 isSelectedFile || isHoveredFile ? "bg-accent/10" : ""
               }`}
             >
-              {dot("target", `in:${file}`)}
+              {isManifest ? null : dot("target", `in:${file}`)}
               <span className="w-full truncate pl-1.5">{basename(file)}</span>
-              {dot("source", `out:${file}`)}
+              {isManifest ? null : dot("source", `out:${file}`)}
             </div>
           );
         })}
@@ -312,7 +319,7 @@ function edgeFor(e: MapEdge, expanded: ReadonlySet<string>, bright: boolean): Ed
 
 function MapGraphInner({ datum }: { datum: GraphDatum }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  const { selection, setSelection, category, fileByPath } = useWorkspace();
+  const { selection, setSelection, category, fileByPath, folded } = useWorkspace();
   const rf = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const zoomBeforeToggle = useRef(1);
@@ -344,6 +351,11 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
   const fileOf = useCallback(
     (path: string) => fileToNode.get(path) ?? null,
     [fileToNode],
+  );
+
+  const manifestSet = useMemo(
+    () => new Set(folded.manifestFiles),
+    [folded.manifestFiles],
   );
 
   const openNode = useCallback(
@@ -507,6 +519,7 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
             selectedFile: selection?.kind === "file" ? selection.path : null,
             dimmed,
             rowDim: focus.keptFiles,
+            manifest: manifestSet,
             matched: matchedSet,
           },
         };
@@ -524,6 +537,7 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
       selection,
       focus,
       categoryMatch,
+      manifestSet,
     ],
   );
 
