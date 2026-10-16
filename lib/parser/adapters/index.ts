@@ -1,4 +1,5 @@
 import type { AdapterContext, FrameworkAdapter } from "../framework";
+import { expressAdapter } from "./express";
 import { nestAdapter } from "./nest";
 import { nextAdapter } from "./next";
 import { reactAdapter } from "./react";
@@ -7,7 +8,14 @@ import { reactAdapter } from "./react";
 // decision, not an accident: each earlier framework is the more specific claim.
 // A repository that depends on both Next.js and React is a Next.js repository,
 // because that is the framework whose conventions actually shape the files.
-const ADAPTERS: readonly FrameworkAdapter[] = [nextAdapter, nestAdapter, reactAdapter];
+// Express is tried last: it says little about the layout, so a repository that
+// also declares a more opinionated framework keeps that framework.
+const ADAPTERS: readonly FrameworkAdapter[] = [
+  nextAdapter,
+  nestAdapter,
+  reactAdapter,
+  expressAdapter,
+];
 
 // The fallback. Every source file is a node, every role comes from the
 // extension, and no route is claimed, so a repository that matches nothing
@@ -31,4 +39,4 @@ export function adapterFor(name: string): FrameworkAdapter {
   return ADAPTERS.find((adapter) => adapter.name === name) ?? noFrameworkAdapter;
 }
 
-export { nestAdapter, nextAdapter, reactAdapter };
+export { expressAdapter, nestAdapter, nextAdapter, reactAdapter };
