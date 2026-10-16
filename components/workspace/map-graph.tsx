@@ -18,8 +18,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 
 import type { MapEdge, MapNode } from "@/lib/map/fold";
 import { basename } from "@/lib/map/labels";
+import { matchCategory } from "@/lib/map/match";
 
-import { fileKind } from "./categories";
 import { layoutNodes } from "./map-layout";
 import { useWorkspace } from "./workspace-context";
 
@@ -319,7 +319,7 @@ function edgeFor(e: MapEdge, expanded: ReadonlySet<string>, bright: boolean): Ed
 
 function MapGraphInner({ datum }: { datum: GraphDatum }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  const { selection, setSelection, category, fileByPath, folded } = useWorkspace();
+  const { selection, setSelection, category, roleByPath, folded } = useWorkspace();
   const rf = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const zoomBeforeToggle = useRef(1);
@@ -467,21 +467,10 @@ function MapGraphInner({ datum }: { datum: GraphDatum }) {
     return { keptNodes, keptFiles, brightEdges };
   }, [selection, datum, fileToNode]);
 
-  const categoryMatch = useMemo(() => {
-    if (category === null) return null;
-    const nodeHasMatch = new Map<string, boolean>();
-    const nodeMatched = new Map<string, ReadonlySet<string>>();
-    for (const node of datum.nodes) {
-      const matched = new Set<string>();
-      for (const file of node.files) {
-        const f = fileByPath.get(file);
-        if (f && fileKind(f) === category) matched.add(file);
-      }
-      nodeHasMatch.set(node.id, matched.size > 0);
-      nodeMatched.set(node.id, matched);
-    }
-    return { nodeHasMatch, nodeMatched };
-  }, [datum, category, fileByPath]);
+  const categoryMatch = useMemo(
+    () => (category === null ? null : matchCategory(datum.nodes, roleByPath, category)),
+    [datum.nodes, category, roleByPath],
+  );
 
   const rfNodes = useMemo<FolderNode[]>(
     () =>

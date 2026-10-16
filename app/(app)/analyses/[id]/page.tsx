@@ -34,7 +34,8 @@ export default async function AnalysisPage({
 
   const result = analysis.result;
   if (analysis.status === "complete" && result) {
-    const categories = countCategories(result.files);
+    const roleByPath = new Map(result.roles.map((entry) => [entry.path, entry.role]));
+    const categories = countCategories(result.files, roleByPath, result.adapter);
     const folded = foldMap(result);
     const labels = Object.fromEntries(resolveNodeLabels(folded.nodes, result.root));
 

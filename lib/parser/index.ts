@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { noFrameworkAdapter, type FrameworkAdapter } from "./adapter";
+import { fileKindRole, UNCLASSIFIED_ROLE } from "../roles/taxonomy";
+import { detectAdapter } from "./adapters";
 import { MODULE_EXTENSIONS } from "./constants";
+import type { AdapterContext, AdapterFile, FrameworkAdapter } from "./framework";
 import { computeDegrees, dedupeEdges } from "./graph";
 import { extractImports } from "./imports";
 import { countLines, parentFolder } from "./paths";
@@ -12,9 +14,11 @@ import type {
   Coverage,
   Edge,
   EdgeKind,
+  FileRole,
   ImportRecord,
   ParsedFile,
   ParseResult,
+  Route,
   SkippedFile,
 } from "./types";
 
@@ -37,16 +41,12 @@ export async function parseRepository(
     throw new Error(`not a directory: ${rootPath}`);
   }
 
-  const adapter = options.adapter ?? noFrameworkAdapter;
-  const extraIgnored = [
-    ...(adapter.ignoredDirectories ?? []),
-    ...(options.ignoredDirectories ?? []),
-  ];
-
+  const extraIgnored = options.ignoredDirectories ?? [];
   const walk = await walkRepository(root, extraIgnored);
 
   const files: ParsedFile[] = [];
   const skipped: SkippedFile[] = [];
+  const contentByPath = new Map<string, string>();
   const importsByFile = new Map<string, ReturnType<typeof extractImports>>();
 
   for (const walked of walk.files) {
@@ -83,6 +83,7 @@ export async function parseRepository(
       continue;
     }
 
+    contentByPath.set(walked.relativePath, content);
     importsByFile.set(walked.relativePath, extracted);
     files.push({
       path: walked.relativePath,
@@ -96,6 +97,44 @@ export async function parseRepository(
       fanOut: 0,
     });
   }
+
+  // The adapter is chosen once the tree is read: a dependency in package.json
+  // decides most repositories, and the file layout decides the rest. A caller
+  // may force one, and then nothing is detected.
+  const packages = await readPackages(root);
+  const adapterFiles: AdapterFile[] = files.map((file) => ({
+    path: file.path,
+    extension: file.extension,
+    content: contentByPath.get(file.path) ?? "",
+  }));
+  const adapterContext: AdapterContext = { files: adapterFiles, packages };
+  const adapter: FrameworkAdapter = options.adapter ?? detectAdapter(adapterContext);
+
+  // Every parsed file gets exactly one role: the adapter's if it claimed the
+  // file, and — only when no adapter was detected — the generic extension role.
+  // A repository a framework claimed never falls back to extension categories;
+  // a file the adapter did not recognize is honestly "unclassified".
+  const roles: FileRole[] = adapterFiles.map((file) => ({
+    path: file.path,
+    role:
+      adapter.role(file) ??
+      (adapter.name === "none"
+        ? fileKindRole(file.path, file.extension)
+        : UNCLASSIFIED_ROLE),
+  }));
+
+  // Every route points at a file that was parsed; one that does not is dropped,
+  // never stored.
+  const routes: Route[] = adapter
+    .routes(adapterContext)
+    .filter((route) => contentByPath.has(route.file))
+    .map((route) => ({ framework: adapter.name, ...route }))
+    .sort(
+      (a, b) =>
+        a.path.localeCompare(b.path) ||
+        a.file.localeCompare(b.file) ||
+        (a.method ?? "").localeCompare(b.method ?? ""),
+    );
 
   const nodeByPath = new Map<string, string>();
   for (const file of files) nodeByPath.set(file.path.toLowerCase(), file.path);
@@ -191,9 +230,39 @@ export async function parseRepository(
     counts,
     files,
     edges,
+    roles,
+    routes,
     skipped,
     coverage: summarize(records),
   };
+}
+
+// The dependency names a repository declares. A missing or unparseable
+// package.json is not an error — it just means the adapters fall back to reading
+// the file layout.
+async function readPackages(root: string): Promise<ReadonlySet<string>> {
+  const packages = new Set<string>();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await fs.readFile(path.join(root, "package.json"), "utf8"));
+  } catch {
+    return packages;
+  }
+  if (typeof parsed !== "object" || parsed === null) return packages;
+  const groups = parsed as Record<string, unknown>;
+  for (const key of [
+    "dependencies",
+    "devDependencies",
+    "peerDependencies",
+    "optionalDependencies",
+  ]) {
+    const group = groups[key];
+    if (typeof group !== "object" || group === null) continue;
+    for (const name of Object.keys(group as Record<string, unknown>)) {
+      packages.add(name);
+    }
+  }
+  return packages;
 }
 
 function summarize(records: readonly ImportRecord[]): Coverage {
@@ -274,6 +343,14 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export type { Coverage, Edge, ParsedFile, ParseResult, SkippedFile } from "./types";
-export { noFrameworkAdapter } from "./adapter";
-export type { FrameworkAdapter } from "./adapter";
+export type {
+  Coverage,
+  Edge,
+  FileRole,
+  ParsedFile,
+  ParseResult,
+  Route,
+  SkippedFile,
+} from "./types";
+export { adapterFor, noFrameworkAdapter } from "./adapters";
+export type { FrameworkAdapter } from "./framework";

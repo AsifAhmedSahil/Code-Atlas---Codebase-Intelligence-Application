@@ -82,4 +82,39 @@ export async function storeAnalysis(
     const { error } = await client.from("skipped_files").insert(batch);
     if (error) throw new Error(`Could not save skipped files: ${error.message}`);
   }
+
+  // Roles and routes both hang off a file id. A role or route whose file was not
+  // stored is dropped rather than pointed at nothing.
+  const roleRows = result.roles.flatMap((entry) => {
+    const fileId = fileIdByPath.get(entry.path);
+    if (fileId === undefined) return [];
+    return [
+      {
+        organization_id: organizationId,
+        analysis_id: analysisId,
+        file_id: fileId,
+        role: entry.role,
+      },
+    ];
+  });
+  for (const batch of chunks(roleRows, CHUNK)) {
+    const { error } = await client.from("file_roles").insert(batch);
+    if (error) throw new Error(`Could not save file roles: ${error.message}`);
+  }
+
+  const routeRows = result.routes
+    .filter((route) => fileIdByPath.has(route.file))
+    .map((route) => ({
+      organization_id: organizationId,
+      analysis_id: analysisId,
+      file_id: fileIdByPath.get(route.file) ?? null,
+      framework: route.framework,
+      kind: route.kind,
+      path: route.path,
+      method: route.method,
+    }));
+  for (const batch of chunks(routeRows, CHUNK)) {
+    const { error } = await client.from("routes").insert(batch);
+    if (error) throw new Error(`Could not save routes: ${error.message}`);
+  }
 }

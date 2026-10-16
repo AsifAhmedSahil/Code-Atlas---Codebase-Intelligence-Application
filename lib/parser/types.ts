@@ -34,6 +34,26 @@ export interface Edge {
   kind: EdgeKind;
 }
 
+// What a file is in this repository, as decided by the framework adapter that
+// matched (or the generic extension role when none did). One role per parsed
+// file, kept beside the files rather than on them so the file shape stays about
+// the syntax and the role stays about the framework.
+export interface FileRole {
+  path: string;
+  role: string;
+}
+
+// A route recovered from the syntax. `method` is null for a page, which has no
+// HTTP verb. `file` is the module the route was read from; a route with no file
+// is not stored, never invented.
+export interface Route {
+  framework: string;
+  kind: "page" | "api";
+  method: string | null;
+  path: string;
+  file: string;
+}
+
 export type SkipReason = "unsupported-extension" | "unreadable" | "parse-failed";
 
 export interface SkippedFile {
@@ -102,6 +122,8 @@ export interface ParseResult {
   counts: ParseCounts;
   files: ParsedFile[];
   edges: Edge[];
+  roles: FileRole[];
+  routes: Route[];
   skipped: SkippedFile[];
   coverage: Coverage;
 }

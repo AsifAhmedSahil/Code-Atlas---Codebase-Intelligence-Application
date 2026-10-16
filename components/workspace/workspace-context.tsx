@@ -21,8 +21,6 @@ import {
 import type { FoldedMap, MapNode } from "@/lib/map/fold";
 import type { ParsedFile, ParseResult } from "@/lib/parser/types";
 
-import type { FileKind } from "./categories";
-
 export type Selection =
   | { kind: "node"; id: string }
   | { kind: "file"; path: string }
@@ -38,16 +36,20 @@ export interface WorkspaceValue {
   folded: FoldedMap;
   labels: Record<string, string>;
   fileByPath: Map<string, ParsedFile>;
+  // Each file's role, as the parser assigned it. The rail filters on this and
+  // the map dims by it, so both agree on what a "controller" or a "page route"
+  // is without either re-deriving it.
+  roleByPath: Map<string, string>;
   nodeById: Map<string, MapNode>;
   selection: Selection;
   setSelection: Dispatch<SetStateAction<Selection>>;
   hover: Hover;
   setHover: Dispatch<SetStateAction<Hover>>;
-  // The file kind the rail has focused. Nothing outside it disappears — it just
-  // dims — so the shape of the repository stays on screen while one kind stands
+  // The role the rail has focused. Nothing outside it disappears — it just
+  // dims — so the shape of the repository stays on screen while one role stands
   // out. Null means no category, dim nothing.
-  category: FileKind | null;
-  setCategory: Dispatch<SetStateAction<FileKind | null>>;
+  category: string | null;
+  setCategory: Dispatch<SetStateAction<string | null>>;
 }
 
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
@@ -73,10 +75,14 @@ export function WorkspaceProvider({
 }) {
   const [selection, setSelection] = useState<Selection>(null);
   const [hover, setHover] = useState<Hover>(null);
-  const [category, setCategory] = useState<FileKind | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
 
   const fileByPath = useMemo(
     () => new Map(parse.files.map((file) => [file.path, file])),
+    [parse],
+  );
+  const roleByPath = useMemo(
+    () => new Map(parse.roles.map((entry) => [entry.path, entry.role])),
     [parse],
   );
   const nodeById = useMemo(
@@ -90,6 +96,7 @@ export function WorkspaceProvider({
       folded,
       labels,
       fileByPath,
+      roleByPath,
       nodeById,
       selection,
       setSelection,
@@ -98,7 +105,7 @@ export function WorkspaceProvider({
       category,
       setCategory,
     }),
-    [parse, folded, labels, fileByPath, nodeById, selection, hover, category],
+    [parse, folded, labels, fileByPath, roleByPath, nodeById, selection, hover, category],
   );
 
   return (

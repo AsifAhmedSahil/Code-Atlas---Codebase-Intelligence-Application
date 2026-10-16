@@ -1,67 +1,76 @@
-// A file category is what a file is (a kind), derived from the extension the
-// parser recorded. It is derived here, never stored: the parser's shape is the
-// contract, and anything the canvas needs on top of it is computed at render.
+// A file category is what a file is: the role the parser assigned to it, or the
+// generic extension role when no adapter claimed it. The names and the order
+// come from the taxonomy, so the rail a browser shows uses the same words the
+// parser wrote without importing the parser (or a framework) into the bundle.
 
-export type FileKind = "ts" | "tsx" | "js" | "jsx" | "dts" | "other";
+import {
+  fileKindRole,
+  railFor,
+  roleSpecFor,
+  type FileKindRole,
+  type RoleSpec,
+} from "@/lib/roles/taxonomy";
 
-interface CategorySpec {
-  name: string;
-  swatch: string;
-}
-
-const SPEC: Record<FileKind, CategorySpec> = {
-  ts: { name: "TypeScript", swatch: "bg-file-ts" },
-  tsx: { name: "TSX", swatch: "bg-file-tsx" },
-  js: { name: "JavaScript", swatch: "bg-file-js" },
-  jsx: { name: "JSX", swatch: "bg-file-jsx" },
-  dts: { name: "Declarations", swatch: "bg-file-dts" },
-  other: { name: "Other", swatch: "bg-file-other" },
-};
-
-const ORDER: readonly FileKind[] = ["ts", "tsx", "js", "jsx", "dts", "other"];
-
-export interface FileCategory {
-  kind: FileKind;
-  name: string;
-  swatch: string;
-  count: number;
-}
+export type FileKind = FileKindRole;
 
 export interface FileLike {
   path: string;
   extension: string;
 }
 
-export function kindLabel(kind: FileKind): string {
-  return SPEC[kind].name;
-}
-
+// The role read off the extension alone. The adapters assign the framework
+// roles; this is the floor under them.
 export function fileKind(file: FileLike): FileKind {
-  const { path, extension } = file;
-  if (extension === ".ts" && path.endsWith(".d.ts")) return "dts";
-  if (extension === ".ts" || extension === ".mts" || extension === ".cts") {
-    return "ts";
-  }
-  if (extension === ".tsx") return "tsx";
-  if (extension === ".js" || extension === ".mjs" || extension === ".cjs") {
-    return "js";
-  }
-  if (extension === ".jsx") return "jsx";
-  return "other";
+  return fileKindRole(file.path, file.extension);
 }
 
-export function countCategories(files: readonly FileLike[]): FileCategory[] {
-  const counts = new Map<FileKind, number>();
+export function kindLabel(kind: FileKind): string {
+  return roleSpecFor("none", kind)?.name ?? kind;
+}
+
+// The name to show for a role, in the words the detected framework uses. Falls
+// back to the raw id so a role written by a newer adapter is shown, not hidden.
+export function roleLabel(framework: string, role: string): string {
+  return roleSpecFor(framework, role)?.name ?? role;
+}
+
+export interface FileCategory {
+  // The role id, which is also the value the rail filters on.
+  role: string;
+  name: string;
+  swatch: string;
+  count: number;
+}
+
+// The rail for one repository: the roles present among its files, in the
+// taxonomy's fixed reading order. Never sorted by size — a category that moved
+// when the counts changed would make the same repository read differently twice.
+export function countCategories(
+  files: readonly FileLike[],
+  roleByPath: ReadonlyMap<string, string>,
+  framework: string,
+): FileCategory[] {
+  const counts = new Map<string, number>();
   for (const file of files) {
-    const kind = fileKind(file);
-    counts.set(kind, (counts.get(kind) ?? 0) + 1);
+    const role = roleByPath.get(file.path) ?? fileKind(file);
+    counts.set(role, (counts.get(role) ?? 0) + 1);
   }
-  return ORDER.filter((kind) => (counts.get(kind) ?? 0) > 0)
-    .map((kind) => ({
-      kind,
-      name: SPEC[kind].name,
-      swatch: SPEC[kind].swatch,
-      count: counts.get(kind) ?? 0,
-    }))
-    .sort((a, b) => b.count - a.count);
+
+  const known: readonly RoleSpec[] = railFor(framework);
+  const present = known.filter((spec) => (counts.get(spec.role) ?? 0) > 0);
+  const categories = present.map((spec) => ({
+    role: spec.role,
+    name: spec.name,
+    swatch: spec.swatch,
+    count: counts.get(spec.role) ?? 0,
+  }));
+
+  // A role the taxonomy does not name — a newer adapter read by an older build
+  // — is still shown, under its own id, rather than silently hidden.
+  for (const [role, count] of counts) {
+    if (known.some((spec) => spec.role === role)) continue;
+    categories.push({ role, name: role, swatch: "bg-file-other", count });
+  }
+
+  return categories;
 }
