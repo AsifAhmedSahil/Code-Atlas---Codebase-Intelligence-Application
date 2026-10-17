@@ -192,10 +192,10 @@ export async function getStoredAnalysis(
     ...(row.detail === null ? {} : { detail: row.detail }),
   }));
 
-  const roleRows = await readAll<{ file_id: string; role: string }>((from, to) =>
+  const roleRows = await readAll<{ file_id: string; role: string; source: string }>((from, to) =>
     client
       .from("file_roles")
-      .select("file_id, role")
+      .select("file_id, role, source")
       .eq("analysis_id", id)
       .range(from, to),
   );
@@ -205,7 +205,9 @@ export async function getStoredAnalysis(
     const path = pathById.get(row.file_id);
     // A role whose file was not stored is not reported, never guessed.
     if (!path) continue;
-    roles.push({ path, role: row.role });
+    // A role the model assigned is marked as such; anything else reads as an
+    // adapter's, which is what the parser writes.
+    roles.push({ path, role: row.role, source: row.source === "ai" ? "ai" : "adapter" });
   }
 
   const routeRows = await readAll<{

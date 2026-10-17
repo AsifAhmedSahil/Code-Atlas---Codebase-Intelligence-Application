@@ -70,6 +70,7 @@ export default async function AnalysisPage({
           </div>
         </header>
         <WorkspaceView
+          analysisId={analysis.id}
           parse={result}
           folded={folded}
           labels={labels}

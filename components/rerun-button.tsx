@@ -10,7 +10,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function RerunButton({ analysisId }: { analysisId: string }) {
+export function RerunButton({
+  analysisId,
+  label = "Run again",
+}: {
+  analysisId: string;
+  // What the button says. The staleness note says "Re-analyse" because that is
+  // the act it is offering there; elsewhere it is just running again.
+  label?: string;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -38,7 +46,7 @@ export function RerunButton({ analysisId }: { analysisId: string }) {
       disabled={pending}
       className="h-7 shrink-0 rounded-md border border-border px-2.5 text-[11px] text-muted transition-colors hover:border-accent hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50"
     >
-      {pending ? "Starting…" : "Run again"}
+      {pending ? "Starting…" : label}
     </button>
   );
 }

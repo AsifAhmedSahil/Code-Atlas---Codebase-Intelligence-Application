@@ -30,6 +30,7 @@ import {
   roleLabel,
   type FileCategory,
 } from "./categories";
+import { ExplanationTab } from "./explanation-tab";
 import { useWorkspace } from "./workspace-context";
 
 type Tab = "structure" | "routes" | "explanation";
@@ -491,16 +492,6 @@ function RoutesTab() {
           ))}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function ExplanationTab() {
-  return (
-    <div className="px-3 py-4">
-      <p className="text-[12px] leading-relaxed text-muted">
-        No explanation yet. This tab fills in once there is a model call to write one.
-      </p>
     </div>
   );
 }

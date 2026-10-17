@@ -152,27 +152,36 @@ export type Database = {
         Row: {
           analysis_id: string
           body: string
+          content_hash: string
           created_at: string
           id: string
+          model: string
           organization_id: string
+          prompt_version: string
           subject_id: string
           subject_kind: string
         }
         Insert: {
           analysis_id: string
           body: string
+          content_hash?: string
           created_at?: string
           id?: string
+          model?: string
           organization_id: string
+          prompt_version?: string
           subject_id: string
           subject_kind: string
         }
         Update: {
           analysis_id?: string
           body?: string
+          content_hash?: string
           created_at?: string
           id?: string
+          model?: string
           organization_id?: string
+          prompt_version?: string
           subject_id?: string
           subject_kind?: string
         }
@@ -201,6 +210,7 @@ export type Database = {
           id: string
           organization_id: string
           role: string
+          source: string
         }
         Insert: {
           analysis_id: string
@@ -209,6 +219,7 @@ export type Database = {
           id?: string
           organization_id: string
           role: string
+          source?: string
         }
         Update: {
           analysis_id?: string
@@ -217,6 +228,7 @@ export type Database = {
           id?: string
           organization_id?: string
           role?: string
+          source?: string
         }
         Relationships: [
           {

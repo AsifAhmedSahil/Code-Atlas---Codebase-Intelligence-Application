@@ -94,6 +94,7 @@ export async function storeAnalysis(
         analysis_id: analysisId,
         file_id: fileId,
         role: entry.role,
+        source: entry.source ?? "adapter",
       },
     ];
   });
