@@ -13,12 +13,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { parseRepository } from "@/lib/parser";
 import type { Database, Json } from "@/lib/supabase/database.types";
+import { classifyUnidentified } from "@/lib/ai/classify";
 
 import { extractArchive, repositoryRoot } from "./archive";
 import { downloadArchive, parseRepoUrl, resolveRepository } from "./github";
 import { storeAnalysis } from "./store";
 
-export type StageName = "fetch" | "select" | "parse" | "store";
+export type StageName = "fetch" | "select" | "parse" | "classify" | "store";
 
 export interface RunInput {
   url: string;
@@ -58,7 +59,14 @@ export async function runAnalysis(input: RunInput): Promise<void> {
     const root = await repositoryRoot(extractionDir);
 
     await advance("parse", "Reading files and imports");
-    const result = await parseRepository(root);
+    const parsed = await parseRepository(root);
+
+    // A stage between parsing and storing: files no adapter could place are
+    // asked about, one word each, and left alone if anything goes wrong. It is
+    // best-effort by design, so a repository with nothing unclassified pays for
+    // no call at all.
+    await advance("classify", "Identifying files no rule recognised");
+    const result = await classifyUnidentified({ root, result: parsed });
 
     await advance("store", "Saving the map");
     await storeAnalysis(client, { organizationId, analysisId, result });

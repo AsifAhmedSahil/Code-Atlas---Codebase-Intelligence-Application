@@ -9,6 +9,7 @@ import { writeFile } from "node:fs/promises";
 
 const API_BASE = "https://api.github.com";
 const CODELOAD_BASE = "https://codeload.github.com";
+const RAW_BASE = "https://raw.githubusercontent.com";
 
 export interface RepoRef {
   owner: string;
@@ -112,4 +113,42 @@ export async function downloadArchive(
 
   const bytes = new Uint8Array(await response.arrayBuffer());
   await writeFile(destinationPath, bytes);
+}
+
+// The commit the default branch points at right now. Used to answer whether a
+// repository has moved past the commit an analysis was taken at, so the answer
+// is the repository's own, not a guess from a path or a timestamp.
+export async function fetchHeadSha(ref: RepoRef): Promise<string> {
+  const repo = await githubJson(`/repos/${ref.owner}/${ref.repo}`);
+  const defaultBranch = readString(repo, "default_branch");
+  if (!defaultBranch) {
+    throw new Error("GitHub did not report a default branch for that repository.");
+  }
+  const commit = await githubJson(
+    `/repos/${ref.owner}/${ref.repo}/commits/${encodeURIComponent(defaultBranch)}`,
+  );
+  const commitSha = readString(commit, "sha");
+  if (!commitSha) {
+    throw new Error("GitHub did not report a commit for that repository.");
+  }
+  return commitSha;
+}
+
+// One file at one revision, as text. The revision is a commit sha, so what is
+// read is exactly the content that was hashed, never a moving branch.
+export async function fetchRawFile(
+  ref: RepoRef,
+  revision: string,
+  filePath: string,
+): Promise<string> {
+  const encoded = filePath.split("/").map(encodeURIComponent).join("/");
+  const url = `${RAW_BASE}/${ref.owner}/${ref.repo}/${revision}/${encoded}`;
+  const response = await fetch(url, { headers: { "User-Agent": "cartograph" } });
+  if (response.status === 404) {
+    throw new Error(`No file at ${filePath} for that revision.`);
+  }
+  if (!response.ok) {
+    throw new Error(`Could not read ${filePath} (HTTP ${response.status}).`);
+  }
+  return response.text();
 }

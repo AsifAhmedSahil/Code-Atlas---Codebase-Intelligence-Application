@@ -38,9 +38,16 @@ export interface Edge {
 // matched (or the generic extension role when none did). One role per parsed
 // file, kept beside the files rather than on them so the file shape stays about
 // the syntax and the role stays about the framework.
+//
+// `source` says who decided, so a role the model assigned to a file no adapter
+// could identify never reads as one a rule decided. The parser and its adapters
+// leave it unset, which reads as "adapter".
+export type RoleSource = "adapter" | "ai";
+
 export interface FileRole {
   path: string;
   role: string;
+  source?: RoleSource;
 }
 
 // A route recovered from the syntax. `method` is null for a page, which has no

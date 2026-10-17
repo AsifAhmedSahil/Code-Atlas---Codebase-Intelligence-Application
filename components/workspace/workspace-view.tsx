@@ -16,12 +16,14 @@ import { WorkspaceProvider } from "./workspace-context";
 import { WorkspaceShell } from "./workspace-shell";
 
 export function WorkspaceView({
+  analysisId,
   parse,
   folded,
   labels,
   categories,
   banner,
 }: {
+  analysisId: string;
   parse: ParseResult;
   folded: FoldedMap;
   labels: Record<string, string>;
@@ -33,7 +35,12 @@ export function WorkspaceView({
   const datum = { nodes: folded.nodes, edges: folded.edges, labels };
 
   return (
-    <WorkspaceProvider parse={parse} folded={folded} labels={labels}>
+    <WorkspaceProvider
+      analysisId={analysisId}
+      parse={parse}
+      folded={folded}
+      labels={labels}
+    >
       <WorkspaceShell
         rail={<FileRail categories={categories} total={parse.counts.parsed} />}
         canvas={

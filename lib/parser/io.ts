@@ -113,6 +113,11 @@ function assertRole(value: unknown): asserts value is FileRole {
   if (!isRecord(value)) fail("role entry is not an object");
   if (typeof value.path !== "string") fail("role.path is not a string");
   if (typeof value.role !== "string") fail("role.role is not a string");
+  // Absent in results written before the model could assign a role. Validated
+  // when present so an AI-assigned role is never read as an adapter's.
+  if (value.source !== undefined && value.source !== "adapter" && value.source !== "ai") {
+    fail("role.source is unknown");
+  }
 }
 
 function assertRoute(value: unknown): asserts value is Route {

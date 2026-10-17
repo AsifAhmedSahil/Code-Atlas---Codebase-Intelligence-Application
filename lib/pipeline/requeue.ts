@@ -13,6 +13,9 @@ export async function clearAnalysisResults(
   client: SupabaseClient<Database>,
   analysisId: string,
 ): Promise<void> {
+  // A cached explanation was written from this analysis's content; once the
+  // content is gone the cache it keys is meaningless, so it clears with it.
+  await client.from("explanations").delete().eq("analysis_id", analysisId);
   await client.from("edges").delete().eq("analysis_id", analysisId);
   await client.from("routes").delete().eq("analysis_id", analysisId);
   await client.from("file_roles").delete().eq("analysis_id", analysisId);

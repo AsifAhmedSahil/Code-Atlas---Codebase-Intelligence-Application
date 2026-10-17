@@ -1,6 +1,6 @@
 "use client";
 
-// What a run in progress looks like: the four stages, the one it is on lit, and
+// What a run in progress looks like: the stages, the one it is on lit, and
 // the sentence the database published for it. When the run fails it says which
 // stage failed and why, and offers a re-run — which is the only way to run the
 // same repository a second time.
@@ -17,6 +17,7 @@ const STAGES = [
   { name: "fetch", label: "Fetch", hint: "Downloading the repository archive" },
   { name: "select", label: "Select", hint: "Unpacking what was downloaded" },
   { name: "parse", label: "Parse", hint: "Reading files and imports" },
+  { name: "classify", label: "Classify", hint: "Identifying files no rule recognised" },
   { name: "store", label: "Store", hint: "Saving the map" },
 ] as const;
 
