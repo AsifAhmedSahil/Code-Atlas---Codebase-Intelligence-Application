@@ -15,11 +15,15 @@ export interface PromptNeighbour {
 // How many neighbours are ever listed. A file with hundreds of importers would
 // otherwise carry a prompt the model cannot use; the short count says how many
 // were left out, and no path that is left out is ever mentioned.
-const NEIGHBOUR_LIMIT = 40;
+//
+// Exported so the evals can recompute the exact set of paths a prompt showed
+// without rebuilding the prompt: the invented-path check compares what an
+// answer named against these limits, so it has to read the same ones.
+export const NEIGHBOUR_LIMIT = 40;
 
 // How much of a file is sent. Enough to see what it is, bounded so the call
 // stays a fixed size whatever the repository holds.
-const CONTENT_LIMIT = 6000;
+export const CONTENT_LIMIT = 6000;
 
 // The three pieces of formatting the pane renders, and the prohibition on the
 // rest. The pane is narrow: headings would cut a few short paragraphs into
@@ -137,7 +141,7 @@ export interface FolderPromptInput {
   internalEdges: number;
 }
 
-const FILE_LIST_LIMIT = 60;
+export const FILE_LIST_LIMIT = 60;
 
 export function buildFolderPrompt(input: FolderPromptInput): Prompt {
   const shown = input.files.slice(0, FILE_LIST_LIMIT);

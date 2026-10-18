@@ -1,0 +1,42 @@
+npm notice run cartography@0.1.0 npx
+npm notice run tsx evals/run.ts prompt-versions
+Starting evaluation of experiment: file-v1-921cdf73
+View results at https://smith.langchain.com/o/e4aa3bad-7dea-42b4-b04e-c490f5d46e95/datasets/da3944e3-f607-44b9-a8b6-d14c4360085f/compare?selectedSessions=71bdd7fd-32fc-45df-a832-aef6449cde5e
+Starting evaluation of experiment: file-v0-2b459ed1
+View results at https://smith.langchain.com/o/e4aa3bad-7dea-42b4-b04e-c490f5d46e95/datasets/da3944e3-f607-44b9-a8b6-d14c4360085f/compare?selectedSessions=a8936eb6-2443-4ec6-aa16-b00906cf7fac
+Prompt comparison — dataset explanation-file-d4dc27ca, 30 file(s)
+  path                                            file/current  file/v0
+  apps/nextjs-app/e2e/tests/auth.setup.ts                1.00      1.00
+  apps/nextjs-app/e2e/tests/smoke.spec.ts                1.00      1.00
+  apps/nextjs-app/mock-server.ts                         1.00      1.00
+  apps/nextjs-app/src/app/app/_components/dashboard-info.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/_components/dashboard-layout.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/discussions/__tests__/discussions.test.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/discussions/_components/discussions.tsx       0.80      1.00
+  apps/nextjs-app/src/app/app/discussions/[discussionId]/__tests__/discussion.test.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/discussions/[discussionId]/_components/discussion.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/discussions/[discussionId]/page.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/discussions/page.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/layout.tsx                 1.00      1.00
+  apps/nextjs-app/src/app/app/page.tsx                   1.00      1.00
+  apps/nextjs-app/src/app/app/profile/_components/profile.tsx       0.80      1.00
+  apps/nextjs-app/src/app/app/profile/page.tsx           1.00      1.00
+  apps/nextjs-app/src/app/app/users/_components/admin-guard.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/users/_components/users.tsx       1.00      1.00
+  apps/nextjs-app/src/app/app/users/page.tsx             0.80      1.00
+  apps/nextjs-app/src/app/auth/_components/auth-layout.tsx       1.00      1.00
+  apps/nextjs-app/src/app/auth/layout.tsx                1.00      1.00
+  apps/nextjs-app/src/components/errors/main.tsx         1.00      1.00
+  apps/nextjs-app/src/components/ui/button/button.stories.tsx       1.00      1.00
+  apps/nextjs-app/src/components/ui/button/button.tsx       1.00      1.00
+  apps/nextjs-app/src/components/ui/button/index.ts       1.00      1.00
+  apps/nextjs-app/src/components/ui/dialog/__tests__/dialog.test.tsx       1.00      1.00
+  apps/nextjs-app/src/components/ui/dialog/confirmation-dialog/__tests__/confirmation-dialog.test.tsx       1.00      1.00
+  apps/nextjs-app/src/components/ui/dialog/confirmation-dialog/confirmation-dialog.stories.tsx       1.00      1.00
+  apps/nextjs-app/src/components/ui/dialog/confirmation-dialog/confirmation-dialog.tsx       1.00      1.00
+  apps/nextjs-app/src/components/ui/dialog/confirmation-dialog/index.ts       1.00      1.00
+  apps/nextjs-app/src/components/ui/dialog/dialog.stories.tsx       1.00      1.00
+  mean usefulness (model judge, 0-1):
+    file/current  0.980
+    file/v0       1.000
+    difference    -0.020
