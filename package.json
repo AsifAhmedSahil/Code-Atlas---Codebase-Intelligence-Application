@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "parse": "tsx scripts/parse.ts"
+    "parse": "tsx scripts/parse.ts",
+    "eval:paths": "tsx evals/run.ts invented-paths",
+    "eval:roles": "tsx evals/run.ts role-accuracy",
+    "eval:prompts": "tsx evals/run.ts prompt-versions"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.14",

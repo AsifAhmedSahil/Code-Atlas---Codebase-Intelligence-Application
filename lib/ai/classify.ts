@@ -21,7 +21,11 @@ import { buildClassifyPrompt, normalizeClassification } from "./prompt";
 // bound the reader pays for once and can see.
 const CLASSIFY_LIMIT = 40;
 const CONCURRENCY = 4;
-const EXCERPT_BYTES = 2000;
+
+// How many bytes of a file the classifier reads. Exported so the role-accuracy
+// eval shows the model exactly the same excerpt this stage does when it grades a
+// role, rather than re-deciding the number for itself.
+export const EXCERPT_BYTES = 2000;
 
 async function excerptOf(absolutePath: string): Promise<string | null> {
   try {
