@@ -55,7 +55,7 @@ async function githubJson(path: string): Promise<unknown> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       Accept: "application/vnd.github+json",
-      "User-Agent": "cartograph",
+      "User-Agent": "RepoScope",
     },
   });
 
@@ -105,7 +105,7 @@ export async function downloadArchive(
 ): Promise<void> {
   const url = `${CODELOAD_BASE}/${repo.owner}/${repo.repo}/tar.gz/${repo.commitSha}`;
   const response = await fetch(url, {
-    headers: { "User-Agent": "cartograph" },
+    headers: { "User-Agent": "RepoScope" },
   });
   if (!response.ok) {
     throw new Error(`Could not download the repository archive (HTTP ${response.status}).`);
@@ -143,7 +143,7 @@ export async function fetchRawFile(
 ): Promise<string> {
   const encoded = filePath.split("/").map(encodeURIComponent).join("/");
   const url = `${RAW_BASE}/${ref.owner}/${ref.repo}/${revision}/${encoded}`;
-  const response = await fetch(url, { headers: { "User-Agent": "cartograph" } });
+  const response = await fetch(url, { headers: { "User-Agent": "RepoScope" } });
   if (response.status === 404) {
     throw new Error(`No file at ${filePath} for that revision.`);
   }

@@ -30,7 +30,7 @@ export default async function AppLayout({
           href="/dashboard"
           className="font-display text-[13px] font-medium tracking-[-0.01em] text-text"
         >
-          Cartograph
+          RepoScope
         </Link>
         <div className="flex items-center gap-3">
           <OrganizationSwitcher

@@ -1,12 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Section } from "./section";
-import {
-  AskVisual,
-  ExplanationVisual,
-  ParsedEdgesVisual,
-  RadiusVisual,
-} from "./capability-visuals";
+import { ParsedEdgesVisual, RadiusVisual } from "./capability-visuals";
 
 type Capability = {
   k: string;
@@ -17,35 +12,23 @@ type Capability = {
 
 const CAPABILITIES: Capability[] = [
   {
-    k: "01",
-    title: "Parsed dependencies, never invented",
-    body: "Imports, re-exports, dynamic imports, and require calls become edges. Every import lands in one bucket — resolved, outside, excluded, or failed — and the unresolved ones are kept in full rather than hidden.",
+    k: "The graph",
+    title: "Every line has a source in the code",
+    body: "Imports become directional edges when the parser can resolve them. Unresolved imports stay visible with their classification, so gaps in coverage are part of the map too.",
     visual: <ParsedEdgesVisual />,
   },
   {
-    k: "02",
-    title: "Blast radius and dependency chain",
-    body: "Select a file and see what depends on it and what it depends on, two hops out. Both are arithmetic over the edge list, so they answer instantly — no request, no spinner.",
+    k: "Explore",
+    title: "Follow impact in either direction",
+    body: "Select a file to see what depends on it and what it depends on, up to two hops out. The workspace also shows routes, explanations, and parser coverage alongside the graph.",
     visual: <RadiusVisual />,
-  },
-  {
-    k: "03",
-    title: "Explanations grounded in real neighbours",
-    body: "A written paragraph is built from the subject and the files that actually import it or are imported by it. It is cached, restored across page loads, and notes when the repository has moved on.",
-    visual: <ExplanationVisual />,
-  },
-  {
-    k: "04",
-    title: "Ask, with the lookups shown",
-    body: "Ask a structural question and watch the tool calls appear before the answer. The assistant reads the map through read-only tools and cannot decide an edge or walk the graph on its own.",
-    visual: <AskVisual />,
   },
 ];
 
 /*
  * Alternating rows rather than a card grid: each capability pairs its own
- * diagram with its copy, and the diagram side flips on desktop so the page does
- * not read as four identical blocks.
+ * diagram with its copy. The graph and exploration get one focused
+ * illustration each; the Ask flow is shown separately below.
  */
 export function Capabilities() {
   return (

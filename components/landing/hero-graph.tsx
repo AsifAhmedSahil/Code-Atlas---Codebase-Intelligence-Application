@@ -53,7 +53,7 @@ export function HeroGraph() {
     <div className="overflow-hidden rounded-lg border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <span className="font-mono text-[11px] text-muted">
-          owner/repo · dependency map
+          example/repository · dependency map
         </span>
         <span className="font-mono text-[10px] text-muted">illustration</span>
       </div>

@@ -1,4 +1,4 @@
-# Cartograph
+# RepoScope
 
 The product decisions behind this build, written before it starts, with the reasoning attached. The reasoning matters more than the decision — you'll hit forks this doesn't cover, and you'll need to know which way the thinking was leaning.
 

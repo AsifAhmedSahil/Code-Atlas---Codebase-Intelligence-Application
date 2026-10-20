@@ -6,18 +6,16 @@
  * groups, file nodes, green incoming / amber outgoing edges.
  *
  * This is an illustration, not a screenshot of a running analysis, and it is
- * labelled as one. No counts, ratings, or findings are shown; the numbers that
- * appear are the file-kind tallies the real rail shows, drawn as fixed content.
+ * labelled as one. Its filenames and edges are illustrative, not a snapshot of
+ * a particular repository.
  */
 
-type Kind = { label: string; count: number; color: string };
-
-const KINDS: Kind[] = [
-  { label: ".ts", count: 42, color: "var(--file-ts)" },
-  { label: ".tsx", count: 18, color: "var(--file-tsx)" },
-  { label: ".js", count: 6, color: "var(--file-js)" },
-  { label: ".d.ts", count: 4, color: "var(--file-dts)" },
-  { label: "other", count: 3, color: "var(--file-other)" },
+const KINDS = [
+  { label: ".ts", color: "var(--file-ts)" },
+  { label: ".tsx", color: "var(--file-tsx)" },
+  { label: ".js", color: "var(--file-js)" },
+  { label: ".d.ts", color: "var(--file-dts)" },
+  { label: "other", color: "var(--file-other)" },
 ];
 
 type Group = { label: string; x: number; y: number; w: number; h: number };
@@ -65,10 +63,10 @@ export function ProductPreview() {
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <div className="flex min-w-0 items-center gap-3">
             <span className="font-display text-[12px] font-medium text-text">
-              owner/repo
+              example/repository
             </span>
             <span className="hidden truncate font-mono text-[11px] text-muted sm:inline">
-              github.com/owner/repo
+              github.com/example/repository
             </span>
           </div>
           <span className="shrink-0 font-mono text-[10px] text-muted">
@@ -93,7 +91,6 @@ export function ProductPreview() {
                     />
                     {k.label}
                   </span>
-                  <span className="tabular-nums text-muted">{k.count}</span>
                 </li>
               ))}
             </ul>
@@ -206,18 +203,18 @@ export function ProductPreview() {
               <ul className="flex flex-col gap-1.5 font-mono text-[11px]">
                 <li className="flex items-center gap-2 text-text">
                   <span className="h-1.5 w-1.5 rounded-full bg-incoming" />
-                  app/layout.tsx
+                  example/importer.ts
                 </li>
                 <li className="flex items-center gap-2 text-text">
                   <span className="h-1.5 w-1.5 rounded-full bg-incoming" />
-                  pipeline/load.ts
+                  example/consumer.ts
                 </li>
               </ul>
             </div>
 
             <div className="mt-4 border-t border-border pt-3">
               <p className="font-mono text-[10px] text-muted">
-                Incoming: 2 · Outgoing: 0
+                Incoming · Outgoing
               </p>
             </div>
           </div>
@@ -225,9 +222,8 @@ export function ProductPreview() {
       </div>
 
       <figcaption className="mx-auto mt-3 max-w-2xl text-center text-xs text-muted">
-        An illustration of the workspace, not a run. The boxes, files, and
-        directional lines come from parsing the code; only the surrounding
-        sentences would be written by the assistant.
+        An illustrative workspace view, not a repository analysis. In a real
+        map, each file and line comes from parsing the repository.
       </figcaption>
     </figure>
   );

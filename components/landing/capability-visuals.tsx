@@ -45,7 +45,7 @@ export function ParsedEdgesVisual() {
         <rect x="132" y="66" width="104" height="36" rx="6" fill="var(--surface)" stroke="var(--accent)" />
         <circle cx="146" cy="84" r="3" fill="var(--file-ts)" />
         <text x="156" y="88" fontFamily="var(--font-geist-mono)" fontSize="10" fill="var(--text)">
-          lib/env.ts
+          selected.ts
         </text>
 
         {/* right: its imports (outgoing) */}
@@ -143,71 +143,6 @@ export function RadiusVisual() {
       <p className="mt-4 border-t border-border pt-4 font-mono text-[10px] text-muted">
         2 hops · arithmetic over the edge list · no request
       </p>
-    </div>
-  );
-}
-
-/* 3. Grounded explanations: neighbours feed the paragraph. */
-export function ExplanationVisual() {
-  return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface p-5">
-      <ul className="flex flex-col gap-2">
-        {["app/layout.tsx", "pipeline/load.ts", "api/analyses/route.ts"].map(
-          (f) => (
-            <li
-              key={f}
-              className="flex items-center gap-2 font-mono text-[11px] text-muted"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-incoming" />
-              {f}
-            </li>
-          )
-        )}
-      </ul>
-      <div className="my-4 flex items-center gap-3">
-        <span className="h-px flex-1 bg-border" />
-        <span className="font-mono text-[10px] text-muted">
-          real neighbours
-        </span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      <p className="text-[13px] leading-relaxed text-text">
-        &ldquo;A shared contract for environment values. It is read at the edge
-        of the app and again when a run is saved — so a change here travels to
-        everything that boots.&rdquo;
-      </p>
-      <p className="mt-3 font-mono text-[10px] text-muted">
-        cached · restored across loads
-      </p>
-    </div>
-  );
-}
-
-/* 4. Ask: the lookup printed before the answer. */
-export function AskVisual() {
-  return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface p-5 font-mono text-[11px]">
-      <div className="flex items-center gap-2 text-muted">
-        <span className="rounded border border-border px-1.5 py-0.5 text-[10px]">
-          tool
-        </span>
-        <span className="text-accent">direct_neighbours</span>
-        <span className="text-muted">{'("lib/env.ts", incoming)'}</span>
-      </div>
-      <div className="mt-3 flex items-center gap-2 text-muted">
-        <span className="rounded border border-border px-1.5 py-0.5 text-[10px]">
-          tool
-        </span>
-        <span className="text-accent">search_files</span>
-        <span className="text-muted">{'("env")'}</span>
-      </div>
-      <div className="mt-4 border-t border-border pt-4">
-        <p className="font-mono text-[10px] text-muted">answer</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-text">
-          Three files read from it. The edges are the parser&rsquo;s; only this
-          sentence is the model&rsquo;s.
-        </p>
-      </div>
     </div>
   );
 }

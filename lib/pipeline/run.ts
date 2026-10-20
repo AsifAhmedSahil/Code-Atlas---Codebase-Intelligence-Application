@@ -46,7 +46,7 @@ export async function runAnalysis(input: RunInput): Promise<void> {
     if (error) throw new Error(`Could not record progress: ${error.message}`);
   };
 
-  const workDir = await fs.mkdtemp(path.join(tmpdir(), "cartograph-"));
+  const workDir = await fs.mkdtemp(path.join(tmpdir(), "reposcope-"));
   try {
     await advance("fetch", "Fetching the repository");
     const remote = await resolveRepository(parseRepoUrl(url));

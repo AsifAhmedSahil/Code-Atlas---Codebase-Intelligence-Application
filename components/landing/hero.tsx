@@ -36,7 +36,7 @@ export function Hero() {
               Parsed, not guessed
             </p>
             <h1 className="max-w-[15ch] font-display text-[2.5rem] font-medium leading-[1.04] tracking-[-0.025em] text-text sm:text-[3.5rem]">
-              See the shape of a codebase you didn&rsquo;t write.
+              See how the code connects.
             </h1>
             <p className="mt-6 max-w-[52ch] text-base leading-relaxed text-muted sm:text-lg">
               Paste a public TypeScript or JavaScript repository and get an

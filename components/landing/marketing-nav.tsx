@@ -2,8 +2,6 @@ import { Show } from "@clerk/nextjs";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { LINK_QUIET } from "./styles";
-
 /*
  * Public navigation, aware of whether the visitor is signed in. Clerk's <Show>
  * reads the session, which is request-time data and cannot be part of the
@@ -17,24 +15,26 @@ import { LINK_QUIET } from "./styles";
  */
 export function MarketingNav() {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface/80 backdrop-blur">
-      <nav
-        aria-label="Primary"
-        className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6"
-      >
+    <header className="atlas-nav">
+      <nav aria-label="Primary" className="atlas-nav-inner">
         <Link
           href="/"
-          className="flex items-center gap-2 font-display text-base font-medium tracking-[-0.01em] text-text"
+          className="atlas-brand"
         >
-          <span
-            aria-hidden
-            className="grid h-5 w-5 place-items-center rounded border border-border"
-          >
-            <span className="h-1.5 w-1.5 rounded-sm bg-accent" />
+          <span className="atlas-brand-symbol" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M5 22.5 14 5l5 10 8-5-8 17-5-10-9 5.5Z" />
+              <circle cx="19" cy="15" r="2.2" />
+            </svg>
           </span>
-          Cartograph
+          <span>RepoScope</span>
+          <span className="atlas-brand-edition">CODE INTELLIGENCE</span>
         </Link>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="atlas-nav-center">
+          <Link href="#how-it-works" className="atlas-nav-link">How it works</Link>
+          <Link href="#ask" className="atlas-nav-link">Grounded answers</Link>
+        </div>
+        <div className="atlas-nav-actions">
           <Suspense fallback={<SignedOutLinks />}>
             <Show when="signed-out" fallback={null}>
               <SignedOutLinks />
@@ -42,9 +42,9 @@ export function MarketingNav() {
             <Show when="signed-in" fallback={null}>
               <Link
                 href="/dashboard"
-                className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="atlas-button atlas-button-primary"
               >
-                Open dashboard
+                Dashboard
               </Link>
             </Show>
           </Suspense>
@@ -57,12 +57,12 @@ export function MarketingNav() {
 function SignedOutLinks() {
   return (
     <>
-      <Link href="/sign-in" className={`px-3 py-2 text-sm ${LINK_QUIET}`}>
+      <Link href="/sign-in" className="atlas-sign-in">
         Sign in
       </Link>
       <Link
         href="/sign-up"
-        className="inline-flex h-9 items-center rounded-md bg-accent px-4 text-sm font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="atlas-nav-button"
       >
         Map a repository
       </Link>

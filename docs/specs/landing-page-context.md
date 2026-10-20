@@ -1,7 +1,7 @@
 # Landing Page — Project Context Brief
 
 > Research-only brief for a downstream AI assistant that will plan and implement
-> a marketing/landing page for Cartograph. No landing page code was written and
+> a marketing/landing page for RepoScope. No landing page code was written and
 > no application code was changed to produce this document.
 >
 > Evidence labels used throughout: **Verified** (directly supported by source or
@@ -37,7 +37,7 @@ claims about passing checks are made.
 
 ## 1. Executive product summary
 
-**Cartograph** maps a public GitHub TypeScript/JavaScript repository into an
+**RepoScope** maps a public GitHub TypeScript/JavaScript repository into an
 interactive dependency graph and lets a developer interrogate it. Sign in, paste
 a public repo URL, and get a map: folders as boxes, imports as directional lines,
 with per-file structure, a written explanation, and a question panel whose
@@ -256,7 +256,7 @@ boilerplate, not configuration.
 - `app/layout.tsx` — root: `<html h-full>`, inline pre-paint theme script,
   `ClerkProvider`, fonts, `metadata` title/description.
 - `app/(app)/layout.tsx` — the authenticated shell: fixed-height `h-dvh` column,
-  a header (`Cartograph` wordmark → `/`, `OrganizationSwitcher`, `ThemeToggle`,
+  a header (`RepoScope` wordmark → `/`, `OrganizationSwitcher`, `ThemeToggle`,
   `UserButton`), and `<main>` that scrolls internally. **This layout wraps every
   protected route** and is the one place a product wordmark/nav already lives.
 - `app/(app)/analyses/[id]/page.tsx` — its own sub-header (back to Runs, project
@@ -366,7 +366,7 @@ is a public GitHub URL, so the landing CTA should be **sign in / start mapping**
 not "book a demo" or "request access" (no such flow exists).
 
 ### 6.6 First five seconds — **Inferred**
-Communicate: *"See the shape of a codebase you didn't write — a dependency map
+Communicate: *"See how the code connects — a dependency map
 built by really parsing the code, with an assistant that looks answers up in the
 map."* The differentiator to land immediately: **parsed, not hallucinated.**
 
@@ -391,10 +391,10 @@ Recommended sections, each justified by a verified capability. Not all are
 mandatory; a focused page could ship hero + how-it-works + three capabilities +
 CTA.
 
-1. **Top nav** — wordmark "Cartograph" (reuse `font-display`), a "Sign in" link,
+1. **Top nav** — wordmark "RepoScope" (reuse `font-display`), a "Sign in" link,
    and a primary "Map a repository" button. *Why:* the only authenticated entry
    is sign-in; there is no public app surface, so the nav must route to Clerk.
-2. **Hero** — headline around *"See the shape of a codebase you didn't write."*
+2. **Hero** — headline around *"See how the code connects."*
    Subcopy names the differentiator: **every line comes from really parsing the
    code — the AI explains it, it never invents it.** Primary CTA "Map a public
    repository" (→ sign-up), secondary "See how it works" (anchor).
@@ -497,7 +497,7 @@ codebase does not settle — **ask the user.**
   Never mock metrics/panels that the product does not have.
 
 ### 8.6 SEO / a11y / performance / reduced-motion
-- `metadata` currently lives in `app/layout.tsx:21` (title "Cartograph",
+- `metadata` currently lives in `app/layout.tsx:21` (title "RepoScope",
   description "Map a codebase from the code itself"). A landing page may set its
   own `metadata`/OpenGraph — **no OG image or favicon beyond `app/favicon.ico`
   exists (Verified)**.
@@ -588,12 +588,12 @@ Browser acceptance (owner-run; landing task must not automate it):
 
 ## 12. Handoff brief for the next AI assistant
 
-You are adding **the first public landing page** to **Cartograph**, an existing
+You are adding **the first public landing page** to **RepoScope**, an existing
 Next.js 16 / React 19 / TypeScript / Tailwind v4 app. You do **not** have the
 repo, so read this whole brief; where it says a file matters, ask the user to
 paste it before editing.
 
-**What Cartograph is.** Sign in (Clerk), paste a public GitHub TS/JS repo URL,
+**What RepoScope is.** Sign in (Clerk), paste a public GitHub TS/JS repo URL,
 get an interactive dependency map. Folders are boxes, files are rows inside them,
 imports are directional edges (amber = outgoing, green = incoming). A right-hand
 pane has tabs **Structure / Routes / Explanation** and a fourth **Ask** mode.
@@ -653,5 +653,5 @@ values. Keep the signed-in experience working; update every Clerk redirect and
 3. **Deployment/preview:** where does this run, and what public env vars are set
    for previews? (No deployment config found.)
 4. **Business model / pricing:** does any pricing or plan exist to reference?
-5. **Brand:** is "Cartograph" the final name and is there a logo/wordmark beyond
+5. **Brand:** is "RepoScope" the final name and is there a logo/wordmark beyond
    the Space Grotesk text wordmark?

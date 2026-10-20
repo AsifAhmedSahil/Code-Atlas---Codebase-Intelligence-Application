@@ -15,7 +15,7 @@ const BOUNDARIES = [
   },
   {
     title: "Maps, not reviews",
-    body: "There are no scores, severity badges, or issues-found. Cartograph shows you the shape of the code; it does not grade it.",
+    body: "There are no scores, severity badges, or issues-found. RepoScope shows you the shape of the code; it does not grade it.",
   },
 ];
 

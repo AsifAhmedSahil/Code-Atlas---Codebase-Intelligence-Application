@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./landing.css";
 
 /*
  * Public marketing shell. Deliberately not the (app) shell: an anonymous
@@ -8,9 +9,9 @@ import type { Metadata } from "next";
  */
 
 export const metadata: Metadata = {
-  title: "Cartograph — Map a codebase from the code itself",
+  title: "RepoScope — See how the code connects",
   description:
-    "Paste a public TypeScript or JavaScript repository and get an interactive dependency map built by really parsing the code. Every node and edge comes from the parser, never from a model.",
+    "Map public TypeScript and JavaScript repositories into an interactive dependency graph. Explore dependencies, understand change impact, and ask questions grounded in parsed code.",
 };
 
 export default function MarketingLayout({

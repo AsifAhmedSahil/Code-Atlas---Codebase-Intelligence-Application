@@ -16,7 +16,7 @@ export function MarketingFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
           <span className="font-display text-sm font-medium text-text">
-            Cartograph
+            RepoScope
           </span>
           <span className="text-xs text-muted">
             Map a codebase from the code itself.
@@ -29,7 +29,7 @@ export function MarketingFooter() {
             </Show>
             <Show when="signed-in" fallback={null}>
               <Link href="/dashboard" className={LINK_QUIET}>
-                Open dashboard
+                Dashboard
               </Link>
             </Show>
           </Suspense>
