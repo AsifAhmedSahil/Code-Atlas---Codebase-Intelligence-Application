@@ -65,6 +65,74 @@ Framework knowledge is an adapter, not a branch: knowing that a file in a partic
 | [OpenAI](https://platform.openai.com) | Explanations and the Ask agent. |
 | [LangSmith](https://smith.langchain.com) | Tracing every AI call. |
 
+## Folder structure
+
+```
+cartography/
+├── app/                        # Next.js App Router
+│   ├── (marketing)/            # Public shell — landing page, no app chrome
+│   │   ├── page.tsx            #   "/" — the landing page
+│   │   ├── layout.tsx          #   public layout (skip link, metadata)
+│   │   └── welcome/page.tsx    #   permanent redirect to "/"
+│   ├── (app)/                  # Authenticated shell (auth.protect())
+│   │   ├── dashboard/page.tsx  #   organization dashboard
+│   │   ├── analyses/[id]/      #   one analysis and its map
+│   │   └── layout.tsx          #   authed chrome (wordmark, org switcher, theme)
+│   ├── api/                    # Route handlers
+│   │   ├── analyses/           #   create / list, and run parsing
+│   │   └── agent/run/          #   Ask — proxies to the agent service
+│   ├── sign-in/, sign-up/      # Clerk auth pages
+│   ├── layout.tsx              # Root layout (fonts, ClerkProvider, theme script)
+│   └── globals.css             # Design tokens, @theme, reduced-motion
+├── agent/                      # The independent Ask service
+│   ├── server.ts               #   HTTP surface (/healthz, /tools, /ask)
+│   ├── runtime.ts              #   AgentRuntime interface + local OpenAI tool loop
+│   └── README.md               #   Full agent documentation
+├── lib/
+│   ├── parser/                 # Standalone parser — files, edges, coverage
+│   │   ├── index.ts            #   parseRepository(): the entry point
+│   │   ├── imports.ts          #   import / re-export / dynamic / require extraction
+│   │   ├── resolve.ts          #   specifier resolution (aliases, index files)
+│   │   ├── framework.ts        #   framework detection
+│   │   └── adapters/           #   next / react / express / nest (framework knowledge)
+│   ├── map/                    # Pure graph functions over files + edges
+│   │   ├── walk.ts             #   traversal (blast radius, dependency chain)
+│   │   ├── fold.ts             #   folders folding into readable boxes
+│   │   ├── coverage.ts         #   coverage arithmetic
+│   │   └── insights.ts         #   most-depended-on, unimported, etc.
+│   ├── pipeline/               # Fetch → select → parse → classify → store
+│   │   ├── github.ts           #   download a public repo archive
+│   │   ├── run.ts              #   the pipeline run
+│   │   ├── store.ts            #   persist an analysis, file by file
+│   │   └── load.ts             #   read a stored analysis back (org-scoped)
+│   ├── ai/                     # Explanations — traced and cached
+│   │   ├── explain.ts          #   the explain entry point
+│   │   ├── classify.ts         #   label files convention couldn't identify
+│   │   ├── cache.ts            #   keyed cache, read inside the traced call
+│   │   └── staleness.ts        #   note when the repository has moved on
+│   ├── agent/                  # Ask service internals (shared with the app)
+│   │   ├── tools.ts            #   the six read-only graph tools
+│   │   ├── scope.ts            #   verify the scoped analysis credential
+│   │   └── repository.ts       #   the only DB read in the agent (org-filtered)
+│   ├── supabase/               # client (browser), server, and generated types
+│   ├── roles/taxonomy.ts       # Supported file roles
+│   └── env.ts                  # Required env vars, checked loudly on boot
+├── components/
+│   ├── landing/                # Public landing sections (one file each)
+│   └── workspace/              # The map UI — canvas, file rail, detail pane, Ask
+├── evals/                      # Checks: invented-paths, role-accuracy, agent, …
+├── scripts/                    # parse CLI + acceptance checks (check-*.ts)
+├── supabase/
+│   ├── migrations/             # Schema, RLS-by-default, progress, explanations
+│   └── seed.sql
+├── docs/
+│   ├── project-doc.md          # Product decisions and their reasoning
+│   └── specs/                  # Per-phase specifications
+├── proxy.ts                    # Next middleware — public-route allowlist
+├── instrumentation.ts          # register() — assert env before serving
+└── next.config.ts              # cacheComponents, turbopack, partial prefetching
+```
+
 ## Getting started
 
 Requires **Node.js** and **pnpm** (`packageManager: pnpm@12.11.2`).
