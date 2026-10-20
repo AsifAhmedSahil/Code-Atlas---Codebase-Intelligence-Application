@@ -19,7 +19,7 @@ const display = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Cartograph",
+  title: "RepoScope",
   description: "Map a codebase from the code itself.",
 };
 

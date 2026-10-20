@@ -1,4 +1,4 @@
--- Cartograph — close the trigger function's public grant (Phase 7 follow-up).
+-- RepoScope — close the trigger function's public grant (Phase 7 follow-up).
 --
 -- `analyses_broadcast_progress` is a trigger function. It is invoked by the
 -- database when a row changes, never by a client, so nobody needs EXECUTE on it

@@ -1,4 +1,4 @@
--- Cartograph — live run progress (Phase 7).
+-- RepoScope — live run progress (Phase 7).
 --
 -- Progress is published by the database, not polled by the browser. The stage a
 -- run has reached and the sentence describing it are already written to

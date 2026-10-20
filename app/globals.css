@@ -87,3 +87,14 @@ body {
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* Nothing moves on its own, and nothing moves for someone who asked it not to.
+   Only hover/focus transitions are affected; no animation is defined. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

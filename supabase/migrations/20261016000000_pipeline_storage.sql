@@ -1,4 +1,4 @@
--- Cartograph — storage for a real analysis (Phase 7).
+-- RepoScope — storage for a real analysis (Phase 7).
 --
 -- The initial schema held only a path per file. A real parse result carries more,
 -- and the stage a run has reached has to live somewhere durable, because the

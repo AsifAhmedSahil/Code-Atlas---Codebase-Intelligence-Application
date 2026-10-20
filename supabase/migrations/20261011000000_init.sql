@@ -1,4 +1,4 @@
--- Cartograph — initial schema.
+-- RepoScope — initial schema.
 --
 -- Nine tables: a local mirror of the identity provider's organizations, and the
 -- eight domain tables. Each domain row owns itself by organization through a

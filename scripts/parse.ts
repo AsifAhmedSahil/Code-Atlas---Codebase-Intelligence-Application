@@ -8,7 +8,7 @@ interface CliArgs {
   out?: string;
 }
 
-const HELP = `cartograph parse — read a repository into files and edges
+const HELP = `reposcope parse — read a repository into files and edges
 
 usage: pnpm parse [directory] [--out <file>]
 

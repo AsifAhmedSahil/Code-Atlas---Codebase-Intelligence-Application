@@ -1,4 +1,4 @@
--- Cartograph — seed data.
+-- RepoScope — seed data.
 --
 -- Three organizations, each with a project and analyses in different states, so
 -- the dashboard cannot be correct unless row-level security is doing the

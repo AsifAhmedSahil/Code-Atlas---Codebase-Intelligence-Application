@@ -26,19 +26,19 @@ export function InviteForm() {
           They join this workspace and see the same runs you do.
         </p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           id="invite-email"
           name="email"
           type="email"
           required
           placeholder="teammate@example.com"
-          className="h-9 w-full max-w-xs rounded-md border border-border bg-raised px-3 text-[13px] text-text outline-none transition-colors placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+          className="h-10 w-full min-w-0 rounded-md border border-border bg-raised px-3 text-[13px] text-text outline-none transition-colors placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 sm:max-w-xs"
         />
         <button
           type="submit"
           disabled={pending}
-          className="h-9 shrink-0 rounded-md bg-accent px-4 text-[13px] font-medium text-white transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none disabled:opacity-50"
+          className="h-10 w-full shrink-0 rounded-md bg-accent px-4 text-[13px] font-medium text-white transition-[filter,transform] hover:brightness-110 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none disabled:opacity-50 sm:w-auto"
         >
           {pending ? "Sending…" : "Invite"}
         </button>

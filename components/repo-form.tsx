@@ -52,7 +52,7 @@ export function RepoForm() {
           your account is requested and nothing is written to it.
         </p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           id="repo-url"
           name="url"
@@ -62,12 +62,12 @@ export function RepoForm() {
           onChange={(event) => setUrl(event.target.value)}
           disabled={pending}
           placeholder="https://github.com/owner/repo"
-          className="h-9 w-full max-w-sm rounded-md border border-border bg-raised px-3 font-mono text-[12px] text-text outline-none transition-colors placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50"
+          className="h-10 w-full min-w-0 flex-1 rounded-md border border-border bg-raised px-3 font-mono text-[12px] text-text outline-none transition-colors placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:opacity-50 sm:max-w-sm"
         />
         <button
           type="submit"
           disabled={pending}
-          className="h-9 shrink-0 rounded-md bg-accent px-4 text-[13px] font-medium text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-50"
+          className="h-10 w-full shrink-0 rounded-md bg-accent px-4 text-[13px] font-medium text-white transition-[filter,transform] hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 disabled:opacity-50 sm:w-auto"
         >
           {pending ? "Opening…" : "Map it"}
         </button>

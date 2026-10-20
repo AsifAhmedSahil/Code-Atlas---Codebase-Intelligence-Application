@@ -1,4 +1,4 @@
--- Cartograph - explanations become a keyed cache (Phase 10).
+-- RepoScope - explanations become a keyed cache (Phase 10).
 --
 -- The initial schema held an explanation with a uuid subject, which fits a file
 -- or a route but not a folded folder whose id is a path like "src/app". Phase 10

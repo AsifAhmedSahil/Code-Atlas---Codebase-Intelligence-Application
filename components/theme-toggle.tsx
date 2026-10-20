@@ -10,7 +10,7 @@ const CHOICES: ReadonlyArray<{ value: ThemeChoice; label: string }> = [
   { value: "dark", label: "Dark" },
 ];
 
-const THEME_EVENT = "cartograph:theme";
+const THEME_EVENT = "reposcope:theme";
 
 function readThemeCookie(): ThemeChoice {
   const match = document.cookie.match(/(?:^|; )theme=([^;]*)/);
