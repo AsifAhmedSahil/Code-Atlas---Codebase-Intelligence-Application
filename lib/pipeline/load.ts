@@ -84,17 +84,36 @@ interface AnalysisHead {
   projects: { name: string; repo_url: string } | null;
 }
 
+// Restricting a read to one organization, for a caller holding a privileged
+// server-side credential. When set, every query below filters on
+// `organization_id` — not only the analyses row — so a child row owned by
+// another organization cannot be reached through this analysis id either. When
+// absent the caller is already row-scoped by its own token and the filter would
+// be redundant. This is the boundary behind which the agent's database access
+// sits; it is narrow on purpose.
+export interface LoadScope {
+  organizationId?: string;
+}
+
 export async function getStoredAnalysis(
   client: SupabaseClient<Database>,
   id: string,
+  scope?: LoadScope,
 ): Promise<StoredAnalysis | null> {
-  const { data, error } = await client
+  const organizationId = scope?.organizationId;
+
+  const headQuery = client
     .from("analyses")
     .select(
       "id, status, stage, stage_message, error, error_stage, commit_sha, started_at, finished_at, created_at, updated_at, adapter, root, counts, coverage, projects ( name, repo_url )",
     )
-    .eq("id", id)
-    .maybeSingle<AnalysisHead>();
+    .eq("id", id);
+  // An analysis in another organization is simply not found here, which is the
+  // same answer as one that does not exist: the caller is never told the
+  // difference.
+  if (organizationId) headQuery.eq("organization_id", organizationId);
+
+  const { data, error } = await headQuery.maybeSingle<AnalysisHead>();
   if (error) throw new Error(error.message);
   if (!data) return null;
 
@@ -130,14 +149,14 @@ export async function getStoredAnalysis(
     hash: string | null;
     fan_in: number;
     fan_out: number;
-  }>((from, to) =>
-    client
+  }>((from, to) => {
+    const query = client
       .from("files")
       .select("id, path, folder, extension, is_module, bytes, lines, hash, fan_in, fan_out")
-      .eq("analysis_id", id)
-      .order("path", { ascending: true })
-      .range(from, to),
-  );
+      .eq("analysis_id", id);
+    if (organizationId) query.eq("organization_id", organizationId);
+    return query.order("path", { ascending: true }).range(from, to);
+  });
 
   const pathById = new Map<string, string>();
   const files: ParsedFile[] = fileRows.map((row) => {
@@ -159,13 +178,14 @@ export async function getStoredAnalysis(
     source_file_id: string;
     target_file_id: string;
     kind: string;
-  }>((from, to) =>
-    client
+  }>((from, to) => {
+    const query = client
       .from("edges")
       .select("source_file_id, target_file_id, kind")
-      .eq("analysis_id", id)
-      .range(from, to),
-  );
+      .eq("analysis_id", id);
+    if (organizationId) query.eq("organization_id", organizationId);
+    return query.range(from, to);
+  });
 
   const edges: Edge[] = [];
   for (const row of edgeRows) {
@@ -177,13 +197,14 @@ export async function getStoredAnalysis(
   }
 
   const skippedRows = await readAll<{ path: string; reason: string; detail: string | null }>(
-    (from, to) =>
-      client
+    (from, to) => {
+      const query = client
         .from("skipped_files")
         .select("path, reason, detail")
-        .eq("analysis_id", id)
-        .order("path", { ascending: true })
-        .range(from, to),
+        .eq("analysis_id", id);
+      if (organizationId) query.eq("organization_id", organizationId);
+      return query.order("path", { ascending: true }).range(from, to);
+    },
   );
 
   const skipped: SkippedFile[] = skippedRows.map((row) => ({
@@ -192,13 +213,11 @@ export async function getStoredAnalysis(
     ...(row.detail === null ? {} : { detail: row.detail }),
   }));
 
-  const roleRows = await readAll<{ file_id: string; role: string; source: string }>((from, to) =>
-    client
-      .from("file_roles")
-      .select("file_id, role, source")
-      .eq("analysis_id", id)
-      .range(from, to),
-  );
+  const roleRows = await readAll<{ file_id: string; role: string; source: string }>((from, to) => {
+    const query = client.from("file_roles").select("file_id, role, source").eq("analysis_id", id);
+    if (organizationId) query.eq("organization_id", organizationId);
+    return query.range(from, to);
+  });
 
   const roles: FileRole[] = [];
   for (const row of roleRows) {
@@ -216,14 +235,14 @@ export async function getStoredAnalysis(
     kind: string;
     path: string;
     method: string | null;
-  }>((from, to) =>
-    client
+  }>((from, to) => {
+    const query = client
       .from("routes")
       .select("file_id, framework, kind, path, method")
-      .eq("analysis_id", id)
-      .order("path", { ascending: true })
-      .range(from, to),
-  );
+      .eq("analysis_id", id);
+    if (organizationId) query.eq("organization_id", organizationId);
+    return query.order("path", { ascending: true }).range(from, to);
+  });
 
   const routes: Route[] = [];
   for (const row of routeRows) {
