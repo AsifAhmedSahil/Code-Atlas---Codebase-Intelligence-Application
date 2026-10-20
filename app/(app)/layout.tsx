@@ -27,7 +27,7 @@ export default async function AppLayout({
     <div className="flex h-dvh flex-col">
       <header className="flex h-11 items-center justify-between border-b border-border bg-raised px-4">
         <Link
-          href="/"
+          href="/dashboard"
           className="font-display text-[13px] font-medium tracking-[-0.01em] text-text"
         >
           Cartograph
@@ -35,8 +35,8 @@ export default async function AppLayout({
         <div className="flex items-center gap-3">
           <OrganizationSwitcher
             hidePersonal
-            afterSelectOrganizationUrl="/"
-            afterCreateOrganizationUrl="/"
+            afterSelectOrganizationUrl="/dashboard"
+            afterCreateOrganizationUrl="/dashboard"
           />
           <ThemeToggle />
           <UserButton />

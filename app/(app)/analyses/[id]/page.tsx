@@ -44,7 +44,7 @@ export default async function AnalysisPage({
         <header className="flex h-11 shrink-0 items-center justify-between gap-4 border-b border-border px-4">
           <div className="flex min-w-0 items-baseline gap-3">
             <Link
-              href="/"
+              href="/dashboard"
               className="shrink-0 text-[12px] text-accent hover:underline"
             >
               ← Runs
@@ -101,7 +101,7 @@ export default async function AnalysisPage({
 function RunHeading({ analysis }: { analysis: StoredAnalysis }) {
   return (
     <header className="flex flex-col gap-2">
-      <Link href="/" className="text-[12px] text-accent hover:underline">
+      <Link href="/dashboard" className="text-[12px] text-accent hover:underline">
         ← All runs
       </Link>
       <h1 className="font-display text-[1.75rem] leading-tight tracking-[-0.02em] text-text">
