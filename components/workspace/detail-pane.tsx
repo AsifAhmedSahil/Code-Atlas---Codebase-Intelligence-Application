@@ -30,6 +30,7 @@ import {
   roleLabel,
   type FileCategory,
 } from "./categories";
+import { AskPanel } from "./ask-panel";
 import { ExplanationTab } from "./explanation-tab";
 import { useWorkspace } from "./workspace-context";
 
@@ -41,8 +42,24 @@ const SUMMARY_LIMIT = 10;
 // stop being about this file and start being about the repository.
 const WALK_DEPTH = 2;
 
+// Ask is a mode of the whole pane, not a third tab. Entering it replaces
+// whatever the pane was showing; leaving it puts the previous tab back. The
+// selection is never cleared on the way in, so the selected file is still
+// selected — and still asked about — when the reader comes back.
 export function DetailPane() {
   const [tab, setTab] = useState<Tab>("structure");
+  const [asking, setAsking] = useState(false);
+
+  if (asking) {
+    return (
+      <aside
+        aria-label="Detail pane"
+        className="flex w-80 shrink-0 flex-col border-l border-border bg-surface"
+      >
+        <AskPanel onClose={() => setAsking(false)} />
+      </aside>
+    );
+  }
 
   return (
     <aside
@@ -59,6 +76,15 @@ export function DetailPane() {
         <TabButton active={tab === "explanation"} onClick={() => setTab("explanation")}>
           Explanation
         </TabButton>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={() => setAsking(true)}
+          title="Ask a question about this analysis"
+          className="relative cursor-pointer px-3 text-[12px] text-muted transition hover:text-text after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-transparent"
+        >
+          Ask
+        </button>
       </div>
       <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
         {tab === "structure" ? (

@@ -8,9 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "parse": "tsx scripts/parse.ts",
+    "agent": "tsx agent/server.ts",
+    "check:phase12": "tsx scripts/check-phase12.ts",
     "eval:paths": "tsx evals/run.ts invented-paths",
     "eval:roles": "tsx evals/run.ts role-accuracy",
-    "eval:prompts": "tsx evals/run.ts prompt-versions"
+    "eval:prompts": "tsx evals/run.ts prompt-versions",
+    "eval:agent": "tsx evals/agent/run.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.14",
