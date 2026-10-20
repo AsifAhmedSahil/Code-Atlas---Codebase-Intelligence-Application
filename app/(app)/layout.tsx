@@ -24,7 +24,7 @@ export default async function AppLayout({
   await auth.protect();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-dvh flex-col">
       <header className="flex h-11 items-center justify-between border-b border-border bg-raised px-4">
         <Link
           href="/"
@@ -42,7 +42,11 @@ export default async function AppLayout({
           <UserButton />
         </div>
       </header>
-      <main className="flex flex-1 flex-col">{children}</main>
+      {/* The shell is exactly the viewport tall. Pages that are taller than the
+          screen scroll here; the workspace page instead fits the height and
+          scrolls its own columns, so asking a question never moves the map or
+          the left rail. */}
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</main>
     </div>
   );
 }
